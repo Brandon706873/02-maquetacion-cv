@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fotografía — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#060810; --panel:rgba(14,18,30,.85); --line:rgba(255,255,255,.07); --line-b:rgba(255,255,255,.13);
+      --text:#dce8ff; --muted:#6e82a8;
+      --acc:#5ad7ff; --acc-glow:rgba(90,215,255,.4);
+      --acc2:#ffd166; --acc3:#b06eff; --radius:16px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:"DM Sans",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:radial-gradient(ellipse 55% 45% at 15% 15%,rgba(90,215,255,.09),transparent),
+                 radial-gradient(ellipse 50% 40% at 85% 85%,rgba(176,110,255,.08),transparent);}
+    .page{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:32px 22px 60px;}
+
+    /* NAV */
+    nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+      margin-bottom:44px;padding:12px 18px;border:1px solid var(--line);border-radius:999px;
+      background:rgba(255,255,255,.03);backdrop-filter:blur(20px);}
+    .nav-brand{font-family:"Playfair Display",serif;font-size:.92rem;font-style:italic;color:var(--acc);}
+    .nav-links{display:flex;gap:8px;flex-wrap:wrap;}
+    .nav-link{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;
+      border:1px solid var(--line-b);background:rgba(255,255,255,.03);color:var(--muted);
+      font-size:.8rem;text-decoration:none;transition:all .25s;}
+    .nav-link:hover{color:var(--text);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);}
+    .nav-dot{width:6px;height:6px;border-radius:50%;}
+
+    /* HEADER */
+    .header-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:5px 14px;border-radius:999px;
+      border:1px solid rgba(90,215,255,.25);background:rgba(90,215,255,.07);font-size:.72rem;
+      font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--acc);margin-bottom:18px;}
+    .header-eyebrow::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--acc);
+      box-shadow:0 0 12px var(--acc-glow);animation:blink 2s ease-in-out infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+    h1{font-family:"Playfair Display",serif;font-size:clamp(2.4rem,5.5vw,5.2rem);font-weight:900;
+      line-height:.92;margin-bottom:16px;letter-spacing:-1px;}
+    h1 em{font-style:italic;color:var(--acc);text-shadow:0 0 40px var(--acc-glow);}
+    .header-sub{color:var(--muted);font-size:1rem;max-width:620px;line-height:1.7;margin-bottom:30px;}
+
+    /* CONTROLS */
+    .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:36px;
+      padding:14px 18px;border:1px solid var(--line);border-radius:var(--radius);
+      background:var(--panel);backdrop-filter:blur(14px);}
+    .ctrl-label{font-size:.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+    .ctrl-btn{padding:6px 16px;border-radius:999px;border:1px solid var(--line-b);background:transparent;
+      color:var(--muted);font-family:"DM Sans",sans-serif;font-size:.8rem;font-weight:500;cursor:pointer;transition:all .2s;}
+    .ctrl-btn:hover,.ctrl-btn.active{background:var(--acc);border-color:var(--acc);color:#050810;font-weight:600;
+      box-shadow:0 0 20px var(--acc-glow);}
+    .ctrl-sep{width:1px;height:28px;background:var(--line-b);}
+    .ctrl-spacer{flex:1;}
+    .col-sel{display:flex;gap:4px;padding:4px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03);}
+    .col-btn{width:34px;height:30px;border-radius:7px;border:none;background:transparent;color:var(--muted);
+      font-size:.72rem;font-weight:700;cursor:pointer;transition:all .2s;}
+    .col-btn.active,.col-btn:hover{background:rgba(255,255,255,.08);color:var(--text);}
+
+    /* GALLERY */
+    .gallery{display:grid;grid-template-columns:repeat(var(--cols,4),1fr);gap:10px;}
+
+    /* THUMBNAIL */
+    .thumb{position:relative;overflow:hidden;border-radius:12px;background:rgba(255,255,255,.04);
+      cursor:pointer;aspect-ratio:1/1;border:1px solid var(--line);}
+    .thumb.tall{aspect-ratio:2/3;}
+    .thumb.wide{aspect-ratio:3/2;}
+
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;
+      transition:transform .5s cubic-bezier(.25,.46,.45,.94);}
+    .thumb:hover img{transform:scale(1.08);}
+
+    /* Placeholder cuando no hay imagen */
+    .img-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:8px;background:linear-gradient(135deg,rgba(90,215,255,.05),rgba(176,110,255,.04));
+      border:2px dashed rgba(90,215,255,.18);}
+    .img-ph .ph-icon{font-size:1.8rem;opacity:.4;}
+    .img-ph .ph-file{font-size:.62rem;color:rgba(90,215,255,.5);font-family:monospace;
+      letter-spacing:.5px;text-align:center;padding:0 8px;}
+
+    .thumb-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,8,16,.9) 0%,transparent 55%);
+      opacity:0;transition:opacity .3s;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;}
+    .thumb:hover .thumb-overlay{opacity:1;}
+    .thumb-title{font-size:.82rem;font-weight:600;color:#fff;margin-bottom:4px;}
+    .thumb-meta{font-size:.68rem;color:rgba(255,255,255,.55);}
+    .thumb-zoom{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;
+      background:rgba(90,215,255,.15);border:1px solid rgba(90,215,255,.3);color:var(--acc);
+      display:flex;align-items:center;justify-content:center;font-size:.8rem;
+      opacity:0;transition:opacity .3s;}
+    .thumb:hover .thumb-zoom{opacity:1;}
+
+    /* LIGHTBOX */
+    .lb{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;
+      background:rgba(4,6,12,.95);backdrop-filter:blur(24px);opacity:0;pointer-events:none;transition:opacity .3s;}
+    .lb.open{opacity:1;pointer-events:all;}
+    .lb-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;
+      border-bottom:1px solid var(--line);flex-shrink:0;}
+    .lb-title-area{display:flex;flex-direction:column;gap:2px;}
+    .lb-title{font-family:"Playfair Display",serif;font-size:1.15rem;font-weight:700;}
+    .lb-subtitle{font-size:.78rem;color:var(--muted);}
+    .lb-actions{display:flex;align-items:center;gap:8px;}
+    .lb-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line-b);
+      background:rgba(255,255,255,.05);color:var(--text);font-size:1rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .lb-btn:hover{background:rgba(255,255,255,.1);}
+    .lb-btn.close:hover{background:rgba(255,60,60,.15);border-color:rgba(255,60,60,.35);color:#ff6b6b;}
+    .lb-main{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;}
+    .lb-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;
+      box-shadow:0 40px 120px rgba(0,0,0,.7);border:1px solid var(--line-b);}
+    .lb.open .lb-img{animation:zIn .3s ease;}
+    @keyframes zIn{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
+    .lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;
+      border:1px solid var(--line-b);background:rgba(14,18,30,.8);color:var(--text);font-size:1.3rem;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(10px);}
+    .lb-nav:hover{background:rgba(90,215,255,.15);border-color:var(--acc);color:var(--acc);}
+    .lb-prev{left:16px;}
+    .lb-next{right:16px;}
+    .lb-footer{display:flex;align-items:center;justify-content:center;gap:16px;padding:16px 24px;
+      border-top:1px solid var(--line);flex-shrink:0;}
+    .lb-dots{display:flex;gap:6px;align-items:center;}
+    .lb-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);cursor:pointer;transition:all .2s;}
+    .lb-dot.active{background:var(--acc);width:20px;border-radius:3px;box-shadow:0 0 10px var(--acc-glow);}
+    .lb-counter{font-size:.8rem;color:var(--muted);min-width:60px;text-align:center;}
+
+    /* SEC ROW */
+    .sec-row{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+    .sec-row h2{font-family:"Playfair Display",serif;font-size:1.35rem;font-style:italic;white-space:nowrap;}
+    .sec-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(90,215,255,.6),rgba(176,110,255,.4),transparent);}
+    .sec-count{font-size:.75rem;color:var(--muted);white-space:nowrap;}
+
+    footer{margin-top:56px;padding:20px 0 8px;border-top:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+    .f-brand{font-family:"Playfair Display",serif;font-style:italic;font-size:.9rem;color:var(--acc);}
+    .f-copy{font-size:.78rem;color:var(--muted);}
+
+    @media(max-width:900px){.gallery{--cols:3!important;}}
+    @media(max-width:600px){
+      .gallery{--cols:2!important;}
+      .controls{flex-direction:column;align-items:flex-start;}
+      .ctrl-spacer{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb">
+  <div class="lb-header">
+    <div class="lb-title-area">
+      <span class="lb-title" id="lb-title">Fotografía</span>
+      <span class="lb-subtitle" id="lb-subtitle">Portfolio</span>
+    </div>
+    <div class="lb-actions">
+      <button class="lb-btn" onclick="dlCurrent()" title="Descargar">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M5 13l5 5 5-5M3 17h14"/></svg>
+      </button>
+      <button class="lb-btn close" onclick="closeLB()">✕</button>
+    </div>
+  </div>
+  <div class="lb-main">
+    <button class="lb-nav lb-prev" onclick="navigate(-1)">‹</button>
+    <img class="lb-img" id="lb-img" src="" alt="">
+    <button class="lb-nav lb-next" onclick="navigate(1)">›</button>
+  </div>
+  <div class="lb-footer">
+    <span class="lb-counter" id="lb-counter">1 / 1</span>
+    <div class="lb-dots" id="lb-dots"></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <nav>
+    <span class="nav-brand">Fotografía</span>
+    <div class="nav-links">
+      <a href="index.html#portfolio" class="nav-link">Portafolio</a>
+      <a href="cv.html" class="nav-link"><span class="nav-dot" style="background:var(--acc2);"></span>CV</a>
+      <a href="index.html" class="nav-link"><span class="nav-dot" style="background:#9ef01a;"></span>← Inicio</a>
+    </div>
+  </nav>
+
+  <div class="header-eyebrow">Fotografía</div>
+  <h1>Mi <em>Galería</em><br>Fotográfica</h1>
+  <p class="header-sub">Colección de fotografías. Haz clic en cualquier imagen para verla en pantalla completa y navegar con las flechas del teclado.</p>
+
+  <div class="controls">
+    <span class="ctrl-label">Categoría:</span>
+    <button class="ctrl-btn active" data-filter="all">Todas</button>
+    <button class="ctrl-btn" data-filter="naturaleza">Naturaleza</button>
+    <button class="ctrl-btn" data-filter="urbano">Urbano</button>
+    <button class="ctrl-btn" data-filter="retrato">Retrato</button>
+    <button class="ctrl-btn" data-filter="abstracto">Abstracto</button>
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-spacer"></div>
+    <span class="ctrl-label">Columnas:</span>
+    <div class="col-sel">
+      <button class="col-btn" onclick="setCols(2)">2</button>
+      <button class="col-btn" onclick="setCols(3)">3</button>
+      <button class="col-btn active" onclick="setCols(4)">4</button>
+      <button class="col-btn" onclick="setCols(5)">5</button>
+    </div>
+  </div>
+
+  <div class="sec-row">
+    <h2>Galería</h2>
+    <div class="sec-line"></div>
+    <span class="sec-count" id="count-lbl">12 fotos</span>
+  </div>
+
+  <!-- ============================================================
+       GALERÍA DE FOTOGRAFÍAS
+       Para agregar / editar una foto:
+         1. Pon tu imagen en:  img/fotografia/foto-01.jpg
+         2. Cambia src="img/fotografia/foto-01.jpg"
+         3. Edita data-title, data-info, data-cat a tu gusto
+         4. Puedes cambiar la clase del thumb: (normal) | tall | wide
+         5. data-cat: naturaleza | urbano | retrato | abstracto
+       ============================================================ -->
+  <div class="gallery" id="gallery" style="--cols:4;">
+
+    <!-- FOTO 1 -->
+    <div class="thumb wide" data-idx="0" data-cat="naturaleza" data-title="Foto 1" data-info="Naturaleza">
+      <img src="img/fotografia/foto-01.jpg" alt="Foto 1"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-01.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 1</p><p class="thumb-meta">Naturaleza</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 2 -->
+    <div class="thumb" data-idx="1" data-cat="urbano" data-title="Foto 2" data-info="Urbano">
+      <img src="img/fotografia/foto-02.jpg" alt="Foto 2"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-02.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 2</p><p class="thumb-meta">Urbano</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 3 -->
+    <div class="thumb tall" data-idx="2" data-cat="retrato" data-title="Foto 3" data-info="Retrato">
+      <img src="img/fotografia/foto-03.jpg" alt="Foto 3"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-03.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 3</p><p class="thumb-meta">Retrato</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 4 -->
+    <div class="thumb" data-idx="3" data-cat="abstracto" data-title="Foto 4" data-info="Abstracto">
+      <img src="img/fotografia/foto-04.jpg" alt="Foto 4"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-04.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 4</p><p class="thumb-meta">Abstracto</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 5 -->
+    <div class="thumb" data-idx="4" data-cat="naturaleza" data-title="Foto 5" data-info="Naturaleza">
+      <img src="img/fotografia/foto-05.jpg" alt="Foto 5"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-05.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 5</p><p class="thumb-meta">Naturaleza</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 6 -->
+    <div class="thumb wide" data-idx="5" data-cat="urbano" data-title="Foto 6" data-info="Urbano">
+      <img src="img/fotografia/foto-06.jpg" alt="Foto 6"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-06.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 6</p><p class="thumb-meta">Urbano</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 7 -->
+    <div class="thumb" data-idx="6" data-cat="naturaleza" data-title="Foto 7" data-info="Naturaleza">
+      <img src="img/fotografia/foto-07.jpg" alt="Foto 7"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-07.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 7</p><p class="thumb-meta">Naturaleza</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 8 -->
+    <div class="thumb" data-idx="7" data-cat="retrato" data-title="Foto 8" data-info="Retrato">
+      <img src="img/fotografia/foto-08.jpg" alt="Foto 8"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-08.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 8</p><p class="thumb-meta">Retrato</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 9 -->
+    <div class="thumb" data-idx="8" data-cat="abstracto" data-title="Foto 9" data-info="Abstracto">
+      <img src="img/fotografia/foto-09.jpg" alt="Foto 9"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-09.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 9</p><p class="thumb-meta">Abstracto</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 10 -->
+    <div class="thumb wide" data-idx="9" data-cat="naturaleza" data-title="Foto 10" data-info="Naturaleza">
+      <img src="img/fotografia/foto-10.jpg" alt="Foto 10"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-10.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 10</p><p class="thumb-meta">Naturaleza</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 11 -->
+    <div class="thumb" data-idx="10" data-cat="urbano" data-title="Foto 11" data-info="Urbano">
+      <img src="img/fotografia/foto-11.jpg" alt="Foto 11"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-11.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 11</p><p class="thumb-meta">Urbano</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+    <!-- FOTO 12 -->
+    <div class="thumb" data-idx="11" data-cat="retrato" data-title="Foto 12" data-info="Retrato">
+      <img src="img/fotografia/foto-12.jpg" alt="Foto 12"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">📷</span><span class="ph-file">foto-12.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Foto 12</p><p class="thumb-meta">Retrato</p></div>
+      <span class="thumb-zoom">⤢</span>
+    </div>
+
+  </div>
+
+  <footer>
+    <span class="f-brand">Fotografía</span>
+    <span class="f-copy">Capturando instantes · Portfolio Visual</span>
+  </footer>
+</div>
+
+<script>
+  let currentIdx = 0;
+  let visibleItems = [];
+
+  function buildItems() {
+    visibleItems = [];
+    document.querySelectorAll('.thumb:not([style*="none"])').forEach(el => {
+      const img = el.querySelector('img');
+      visibleItems.push({
+        src: img ? img.src : '',
+        title: el.dataset.title,
+        info: el.dataset.info,
+        idx: parseInt(el.dataset.idx)
+      });
+    });
+    buildDots();
+  }
+
+  function buildDots() {
+    const dc = document.getElementById('lb-dots');
+    dc.innerHTML = '';
+    visibleItems.slice(0, 15).forEach((_, i) => {
+      const d = document.createElement('span');
+      d.className = 'lb-dot' + (i === currentIdx ? ' active' : '');
+      d.onclick = () => jumpTo(i);
+      dc.appendChild(d);
+    });
+  }
+
+  function openLB(rawIdx) {
+    buildItems();
+    currentIdx = visibleItems.findIndex(it => it.idx === rawIdx);
+    if (currentIdx < 0) currentIdx = 0;
+    showCurrent();
+    document.getElementById('lb').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function showCurrent() {
+    const it = visibleItems[currentIdx];
+    if (!it) return;
+    const img = document.getElementById('lb-img');
+    img.style.opacity = '0';
+    img.src = it.src;
+    img.onload = () => { img.style.transition = 'opacity .3s'; img.style.opacity = '1'; };
+    document.getElementById('lb-title').textContent = it.title;
+    document.getElementById('lb-subtitle').textContent = it.info;
+    document.getElementById('lb-counter').textContent = `${currentIdx + 1} / ${visibleItems.length}`;
+    document.querySelectorAll('.lb-dot').forEach((d, i) => d.classList.toggle('active', i === currentIdx));
+  }
+
+  function navigate(dir) { currentIdx = (currentIdx + dir + visibleItems.length) % visibleItems.length; showCurrent(); }
+  function jumpTo(i) { currentIdx = i; showCurrent(); }
+  function closeLB() { document.getElementById('lb').classList.remove('open'); document.body.style.overflow = ''; }
+  function dlCurrent() {
+    const it = visibleItems[currentIdx]; if (!it) return;
+    const a = document.createElement('a'); a.href = it.src;
+    a.download = it.title.replace(/\s+/g, '-').toLowerCase() + '.jpg'; a.click();
+  }
+
+  // Attach clicks
+  document.querySelectorAll('.thumb').forEach(th => {
+    th.addEventListener('click', () => openLB(parseInt(th.dataset.idx)));
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLB();
+    if (e.key === 'ArrowRight') navigate(1);
+    if (e.key === 'ArrowLeft') navigate(-1);
+  });
+
+  // Filters
+  document.querySelectorAll('.ctrl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.filter;
+      let v = 0;
+      document.querySelectorAll('.thumb').forEach(th => {
+        const m = f === 'all' || th.dataset.cat === f;
+        th.style.display = m ? '' : 'none';
+        if (m) v++;
+      });
+      document.getElementById('count-lbl').textContent = `${v} foto${v !== 1 ? 's' : ''}`;
+    });
+  });
+
+  function setCols(n) {
+    document.getElementById('gallery').style.setProperty('--cols', n);
+    document.querySelectorAll('.col-btn').forEach(b => {
+      b.classList.toggle('active', b.textContent == n);
+    });
+  }
+
+  buildItems();
+</script>
+</body>
+</html>

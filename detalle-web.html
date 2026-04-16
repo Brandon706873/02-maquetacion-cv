@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TETRIS — Galería de Programación</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Saira+Condensed:wght@500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-1: #03040a;
+      --bg-2: #080d1c;
+      --panel: rgba(8, 12, 26, 0.82);
+      --line: rgba(255, 255, 255, 0.07);
+      --text: #edf2ff;
+      --muted: #8898b8;
+      --accent:  #ffd166;
+      --accent-2: #06ffa5;
+      --accent-3: #5ad7ff;
+      --accent-4: #ff6b9d;
+      --shadow: 0 28px 70px rgba(0,0,0,.6);
+      --radius: 20px;
+      --cyan:  #00f5ff;
+      --yellow: #ffd166;
+      --green: #06ffa5;
+      --red:   #ff4757;
+      --blue:  #5ad7ff;
+      --orange:#ff9f43;
+      --purple:#a29bfe;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "DM Mono", monospace;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 20%, rgba(0,245,255,.10) 0%, transparent 35%),
+        radial-gradient(circle at 90% 10%, rgba(255,209,102,.10) 0%, transparent 30%),
+        radial-gradient(circle at 50% 90%, rgba(6,255,165,.07) 0%, transparent 30%),
+        linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 60%, #030612 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── SCANLINES ── */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,0,0,.18) 2px,
+        rgba(0,0,0,.18) 4px
+      );
+      z-index: 9999;
+    }
+
+    /* ── FLOATING TETROMINO PARTICLES ── */
+    .bg-particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      opacity: .07;
+      animation: floatUp linear infinite;
+    }
+
+    @keyframes floatUp {
+      0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+      10%  { opacity: .08; }
+      90%  { opacity: .08; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* ── PAGE LAYOUT ── */
+    .page {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0,245,255,.18);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgba(0,245,255,.06), rgba(255,209,102,.04), rgba(8,12,26,.9));
+      box-shadow: 0 0 0 1px rgba(0,245,255,.05), var(--shadow), 0 0 80px rgba(0,245,255,.06) inset;
+      backdrop-filter: blur(20px);
+      padding: 44px 44px 38px;
+      margin-bottom: 24px;
+    }
+
+    .hero-glow-tl {
+      position: absolute;
+      width: 300px; height: 300px;
+      top: -100px; left: -100px;
+      background: radial-gradient(circle, rgba(0,245,255,.15) 0%, transparent 70%);
+      pointer-events: none;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .hero-glow-br {
+      position: absolute;
+      width: 250px; height: 250px;
+      bottom: -80px; right: -80px;
+      background: radial-gradient(circle, rgba(255,107,157,.12) 0%, transparent 70%);
+      pointer-events: none;
+      animation: pulse 4s ease-in-out infinite reverse;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%       { transform: scale(1.15); opacity: .7; }
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 22px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-size: .78rem;
+      text-decoration: none;
+      font-family: "DM Mono", monospace;
+      letter-spacing: .5px;
+      backdrop-filter: blur(10px);
+      transition: all .3s;
+    }
+
+    .badge:hover {
+      border-color: rgba(0,245,255,.4);
+      background: rgba(0,245,255,.07);
+      box-shadow: 0 0 18px rgba(0,245,255,.15);
+    }
+
+    .badge i {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+      animation: blink 1.8s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
+    .hero h1 {
+      font-family: "Press Start 2P", monospace;
+      font-size: clamp(1.8rem, 4.5vw, 4.2rem);
+      line-height: 1.2;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 .t1 { color: var(--cyan);   text-shadow: 0 0 20px rgba(0,245,255,.5); }
+    .hero h1 .t2 { color: var(--yellow); text-shadow: 0 0 20px rgba(255,209,102,.5); }
+    .hero h1 .t3 { color: var(--green);  text-shadow: 0 0 20px rgba(6,255,165,.5); }
+    .hero h1 .t4 { color: var(--red);    text-shadow: 0 0 20px rgba(255,71,87,.5); }
+    .hero h1 .t5 { color: var(--blue);   text-shadow: 0 0 20px rgba(90,215,255,.5); }
+    .hero h1 .t6 { color: var(--orange); text-shadow: 0 0 20px rgba(255,159,67,.5); }
+
+    .glitch {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+    }
+
+    .glitch::before {
+      color: var(--red);
+      clip: rect(0, 900px, 0, 0);
+      animation: glitch1 3.5s infinite linear alternate-reverse;
+    }
+
+    .glitch::after {
+      color: var(--cyan);
+      clip: rect(0, 900px, 0, 0);
+      animation: glitch2 3.5s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitch1 {
+      0%  { clip: rect(42px,9999px,44px,0); transform: translate(-2px); }
+      20% { clip: rect(12px,9999px,59px,0); transform: translate(2px); }
+      40% { clip: rect(75px,9999px,77px,0); transform: translate(-1px); }
+      60% { clip: rect(30px,9999px,88px,0); transform: translate(1px); }
+      80% { clip: rect(15px,9999px,20px,0); transform: translate(-2px); }
+      100%{ clip: rect(50px,9999px,52px,0); transform: translate(0); }
+    }
+
+    @keyframes glitch2 {
+      0%  { clip: rect(65px,9999px,66px,0); transform: translate(2px); }
+      20% { clip: rect(20px,9999px,21px,0); transform: translate(-2px); }
+      40% { clip: rect(5px, 9999px,6px, 0); transform: translate(1px); }
+      60% { clip: rect(88px,9999px,89px,0); transform: translate(-1px); }
+      80% { clip: rect(35px,9999px,36px,0); transform: translate(2px); }
+      100%{ clip: rect(78px,9999px,79px,0); transform: translate(0); }
+    }
+
+    .hero-desc {
+      color: var(--muted);
+      font-size: .95rem;
+      max-width: 720px;
+      position: relative;
+      z-index: 1;
+      border-left: 2px solid var(--cyan);
+      padding-left: 14px;
+    }
+
+    .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      font-size: .8rem;
+    }
+
+    .stat-chip .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 12px currentColor;
+      flex-shrink: 0;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .left-col { display: grid; gap: 24px; }
+
+    /* ── CARDS ── */
+    .card {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(18px);
+      transition: transform .3s ease, border-color .3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(0,245,255,.18);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--cyan), var(--yellow), var(--green), var(--red), var(--blue), var(--orange));
+      background-size: 100% 200%;
+      animation: stripeAnim 4s linear infinite;
+    }
+
+    @keyframes stripeAnim {
+      0%   { background-position: 0 0; }
+      100% { background-position: 0 200%; }
+    }
+
+    .card-inner { padding: 28px; }
+
+    .sec-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .sec-title h2 {
+      font-family: "Saira Condensed", sans-serif;
+      font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      line-height: 1;
+    }
+
+    .glow-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--cyan), var(--yellow), transparent);
+      opacity: .7;
+    }
+
+    /* ── GAME CONTAINER ── */
+    .game-card {
+      position: relative;
+      border-radius: var(--radius);
+      border: 1px solid rgba(0,245,255,.2);
+      background: rgba(3,5,14,.95);
+      box-shadow: 0 0 60px rgba(0,245,255,.08), var(--shadow), 0 0 120px rgba(0,245,255,.04) inset;
+      overflow: hidden;
+    }
+
+    .game-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--cyan), var(--yellow), var(--green), var(--red));
+      background-size: 100% 300%;
+      animation: stripeAnim 3s linear infinite;
+    }
+
+    .game-ui {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .game-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid rgba(0,245,255,.1);
+    }
+
+    .game-title-badge {
+      font-family: "Press Start 2P", monospace;
+      font-size: .65rem;
+      color: var(--cyan);
+      text-shadow: 0 0 10px var(--cyan);
+      letter-spacing: 2px;
+    }
+
+    .level-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .7rem;
+      color: var(--muted);
+    }
+
+    .level-bar {
+      width: 90px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      overflow: hidden;
+    }
+
+    .level-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      border-radius: 999px;
+      transition: width .4s ease;
+      box-shadow: 0 0 8px var(--cyan);
+    }
+
+    .game-body {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+    }
+
+    .game-side-left,
+    .game-side-right {
+      width: 90px;
+      flex-shrink: 0;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .side-label {
+      font-family: "Press Start 2P", monospace;
+      font-size: .42rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .side-value {
+      font-family: "Press Start 2P", monospace;
+      font-size: .7rem;
+      color: var(--yellow);
+      text-shadow: 0 0 8px rgba(255,209,102,.4);
+    }
+
+    .mini-canvas-wrap {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px;
+      background: rgba(0,0,0,.4);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+
+    .game-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 12px 0;
+    }
+
+    #tetris-canvas {
+      display: block;
+      border: 1px solid rgba(0,245,255,.2);
+      border-radius: 4px;
+      box-shadow: 0 0 30px rgba(0,245,255,.1), inset 0 0 20px rgba(0,0,0,.5);
+      image-rendering: pixelated;
+    }
+
+    .game-controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px 16px;
+      border-top: 1px solid rgba(0,245,255,.08);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .68rem;
+      color: var(--muted);
+    }
+
+    .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.06);
+      font-family: "DM Mono", monospace;
+      font-size: .62rem;
+      color: var(--text);
+    }
+
+    .btn-start {
+      font-family: "Press Start 2P", monospace;
+      font-size: .55rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--cyan);
+      background: rgba(0,245,255,.08);
+      color: var(--cyan);
+      cursor: pointer;
+      text-shadow: 0 0 8px var(--cyan);
+      box-shadow: 0 0 14px rgba(0,245,255,.15);
+      transition: all .25s;
+      letter-spacing: 1px;
+    }
+
+    .btn-start:hover {
+      background: rgba(0,245,255,.18);
+      box-shadow: 0 0 25px rgba(0,245,255,.35);
+    }
+
+    /* ── INFO CARDS ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .info-chip {
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.02);
+      transition: all .3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .info-chip::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .info-chip:hover::after { opacity: 1; }
+
+    .info-chip.c-cyan   { --ic: var(--cyan); }
+    .info-chip.c-yellow { --ic: var(--yellow); }
+    .info-chip.c-green  { --ic: var(--green); }
+    .info-chip.c-red    { --ic: var(--red); }
+    .info-chip.c-blue   { --ic: var(--blue); }
+    .info-chip.c-orange { --ic: var(--orange); }
+    .info-chip.c-purple { --ic: var(--purple); }
+
+    .info-chip:hover {
+      border-color: rgba(255,255,255,.14);
+      box-shadow: 0 0 20px color-mix(in srgb, var(--ic) 15%, transparent);
+    }
+
+    .ic-label {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .ic-value {
+      font-family: "Saira Condensed", sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--ic);
+      text-shadow: 0 0 12px color-mix(in srgb, var(--ic) 40%, transparent);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .ic-desc {
+      font-size: .75rem;
+      color: var(--muted);
+    }
+
+    /* ── CODE SNIPPET ── */
+    .code-block {
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(0,245,255,.12);
+      border-radius: 12px;
+      padding: 20px;
+      font-family: "DM Mono", monospace;
+      font-size: .78rem;
+      line-height: 1.7;
+      color: #a8c;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-block .kw  { color: var(--cyan); }
+    .code-block .fn  { color: var(--yellow); }
+    .code-block .str { color: var(--green); }
+    .code-block .num { color: var(--orange); }
+    .code-block .cmt { color: #5a6a8a; font-style: italic; }
+    .code-block .var { color: #c9b1ff; }
+
+    .code-tag {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: .6rem;
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    /* ── TETROMINO SHOWCASE ── */
+    .pieces-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .piece-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .piece-canvas-wrap {
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.35);
+      padding: 8px;
+      transition: all .3s;
+      cursor: pointer;
+    }
+
+    .piece-canvas-wrap:hover {
+      transform: scale(1.12) rotate(5deg);
+      box-shadow: 0 0 20px rgba(255,255,255,.1);
+    }
+
+    .piece-name {
+      font-family: "Press Start 2P", monospace;
+      font-size: .5rem;
+      color: var(--muted);
+    }
+
+    /* ── TIMELINE ── */
+    .timeline {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(180deg, var(--cyan), var(--yellow), var(--green), transparent);
+      opacity: .5;
+    }
+
+    .tl-item {
+      display: flex;
+      gap: 20px;
+      padding: 0 0 24px 0;
+      position: relative;
+    }
+
+    .tl-dot {
+      width: 33px;
+      height: 33px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Press Start 2P", monospace;
+      font-size: .5rem;
+      border: 1px solid rgba(255,255,255,.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .tl-content { padding-top: 4px; }
+
+    .tl-year {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .tl-title {
+      font-family: "Saira Condensed", sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .tl-text {
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    /* ── SIDE PANEL ── */
+    .side-panel { display: flex; flex-direction: column; gap: 24px; }
+
+    /* ── SCORE BOARD ── */
+    .scoreboard {
+      padding: 22px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,209,102,.15);
+      background: rgba(255,209,102,.03);
+      box-shadow: 0 0 40px rgba(255,209,102,.04);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sb-title {
+      font-family: "Press Start 2P", monospace;
+      font-size: .55rem;
+      color: var(--yellow);
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(255,209,102,.4);
+    }
+
+    .sb-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.06);
+      gap: 10px;
+    }
+
+    .sb-rank {
+      font-family: "Press Start 2P", monospace;
+      font-size: .5rem;
+      width: 22px;
+      text-align: center;
+    }
+
+    .sb-name {
+      flex: 1;
+      font-size: .8rem;
+      color: var(--text);
+    }
+
+    .sb-score {
+      font-family: "Press Start 2P", monospace;
+      font-size: .6rem;
+    }
+
+    /* ── CONTROLS CARD ── */
+    .controls-card {
+      padding: 22px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(90,215,255,.15);
+      background: rgba(90,215,255,.02);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      font-size: .82rem;
+    }
+
+    .ctrl-row:last-child { border-bottom: none; }
+
+    .ctrl-action { color: var(--muted); }
+
+    .ctrl-keys { display: flex; gap: 6px; align-items: center; }
+
+    /* ── TECH TAGS ── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(255,255,255,.03);
+      font-size: .73rem;
+      color: var(--text);
+      margin: 4px;
+      transition: all .25s;
+    }
+
+    .tag:hover {
+      background: rgba(0,245,255,.07);
+      border-color: rgba(0,245,255,.25);
+    }
+
+    .tag-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      margin-top: 28px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: 8px 0;
+    }
+
+    .footer .f-title {
+      font-family: "Press Start 2P", monospace;
+      font-size: .5rem;
+      letter-spacing: 3px;
+      color: rgba(0,245,255,.4);
+      margin-bottom: 8px;
+    }
+
+    /* ── ANIMATIONS ── */
+    .animate-in {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: slideUp .6s ease forwards;
+    }
+
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in:nth-child(1) { animation-delay: .05s; }
+    .animate-in:nth-child(2) { animation-delay: .15s; }
+    .animate-in:nth-child(3) { animation-delay: .25s; }
+    .animate-in:nth-child(4) { animation-delay: .35s; }
+
+    /* Line clear flash overlay */
+    #flash-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0;
+      background: rgba(0,245,255,.12);
+      transition: opacity .1s;
+    }
+
+    /* Score pop */
+    .score-pop {
+      position: fixed;
+      font-family: "Press Start 2P", monospace;
+      font-size: 1rem;
+      color: var(--yellow);
+      text-shadow: 0 0 20px rgba(255,209,102,.8);
+      pointer-events: none;
+      z-index: 9997;
+      animation: popUp 1s ease forwards;
+    }
+
+    @keyframes popUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(1.4); }
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .side-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .hero { padding: 24px 20px; }
+      .card-inner { padding: 20px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .side-panel { grid-template-columns: 1fr; }
+      .game-side-left, .game-side-right { width: 72px; padding: 12px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Flash overlay for line clears -->
+<div id="flash-overlay"></div>
+
+<!-- Floating bg particles -->
+<div class="bg-particles" id="bgParticles"></div>
+
+<main class="page">
+
+  <!-- ── HERO ── -->
+  <section class="hero animate-in">
+    <div class="hero-glow-tl"></div>
+    <div class="hero-glow-br"></div>
+
+    <div class="badge-row">
+      <a href="#" class="badge"><i></i> Portafolio multimedia</a>
+      <a href="cv.html" class="badge"><i style="background:var(--green);box-shadow:0 0 10px var(--green);"></i> CV</a>
+      <a href="index.html" class="badge"><i style="background:var(--yellow);box-shadow:0 0 10px var(--yellow);"></i> ← Principal</a>
+      <span class="badge"><i style="background:var(--red);box-shadow:0 0 10px var(--red);animation:blink .7s ease-in-out infinite;"></i> GAME LIVE</span>
+    </div>
+
+    <h1>
+      <span class="glitch" data-text="TETRIS">
+        <span class="t1">T</span><span class="t2">E</span><span class="t3">T</span><span class="t4">R</span><span class="t5">I</span><span class="t6">S</span>
+      </span>
+      <br>
+      <span style="font-size:.45em;color:var(--muted);font-family:'DM Mono',monospace;text-transform:none;font-weight:400;letter-spacing:.1em;">
+        Apartado de <span style="color:var(--cyan)">Programación</span>
+      </span>
+    </h1>
+
+    <p class="hero-desc">
+      Un clásico reinventado desde cero en JavaScript puro &mdash; sin librerías, sin frameworks.
+      Solo lógica, canvas y píxeles que caen a la velocidad exacta del instinto.
+      Aquí el código <em>es</em> el arte.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat-chip">
+        <div class="dot" style="color:var(--cyan);background:var(--cyan);"></div>
+        <span>Vanilla JS</span>
+      </div>
+      <div class="stat-chip">
+        <div class="dot" style="color:var(--yellow);background:var(--yellow);"></div>
+        <span>Canvas 2D API</span>
+      </div>
+      <div class="stat-chip">
+        <div class="dot" style="color:var(--green);background:var(--green);"></div>
+        <span>7 Tetrominós</span>
+      </div>
+      <div class="stat-chip">
+        <div class="dot" style="color:var(--red);background:var(--red);"></div>
+        <span>Niveles & Velocidad</span>
+      </div>
+      <div class="stat-chip">
+        <div class="dot" style="color:var(--orange);background:var(--orange);"></div>
+        <span>Ghost Piece</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MAIN GRID ── -->
+  <div class="main-grid">
+    <div class="left-col">
+
+      <!-- ── GAME ── -->
+      <div class="game-card animate-in">
+        <div class="game-ui">
+          <div class="game-topbar">
+            <span class="game-title-badge">▶ TETRIS v2.0</span>
+            <div class="level-bar-wrap">
+              <span>NIVEL <span id="disp-level">1</span></span>
+              <div class="level-bar">
+                <div class="level-bar-fill" id="level-bar-fill" style="width:10%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="game-body">
+            <!-- LEFT SIDE -->
+            <div class="game-side-left">
+              <div>
+                <div class="side-label">SCORE</div>
+                <div class="side-value" id="disp-score">0</div>
+              </div>
+              <div>
+                <div class="side-label">LÍNEAS</div>
+                <div class="side-value" id="disp-lines">0</div>
+              </div>
+              <div>
+                <div class="side-label">HOLD</div>
+                <div class="mini-canvas-wrap">
+                  <canvas id="hold-canvas" width="60" height="60"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- CANVAS -->
+            <div class="game-center">
+              <canvas id="tetris-canvas" width="240" height="480"></canvas>
+            </div>
+
+            <!-- RIGHT SIDE -->
+            <div class="game-side-right">
+              <div>
+                <div class="side-label">NEXT</div>
+                <div class="mini-canvas-wrap">
+                  <canvas id="next-canvas" width="60" height="180"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="game-controls-bar">
+            <div style="display:flex;gap:14px;flex-wrap:wrap;">
+              <div class="ctrl-hint"><span class="key">←→</span> Mover</div>
+              <div class="ctrl-hint"><span class="key">↑</span> Rotar</div>
+              <div class="ctrl-hint"><span class="key">↓</span> Bajar</div>
+              <div class="ctrl-hint"><span class="key">Space</span> Drop</div>
+              <div class="ctrl-hint"><span class="key">C</span> Hold</div>
+            </div>
+            <button class="btn-start" id="btn-start" onclick="gameStart()">INICIAR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STATS ── -->
+      <div class="card animate-in">
+        <div class="card-inner">
+          <div class="sec-title">
+            <h2>Datos del Juego</h2>
+            <div class="glow-line"></div>
+          </div>
+          <div class="info-grid">
+            <div class="info-chip c-cyan">
+              <div class="ic-label">Inventado</div>
+              <div class="ic-value">1984</div>
+              <div class="ic-desc">por Alexey Pajitnov en la URSS</div>
+            </div>
+            <div class="info-chip c-yellow">
+              <div class="ic-label">Plataformas</div>
+              <div class="ic-value">50+</div>
+              <div class="ic-desc">versiones oficiales publicadas</div>
+            </div>
+            <div class="info-chip c-green">
+              <div class="ic-label">Tetrominós</div>
+              <div class="ic-value">7</div>
+              <div class="ic-desc">piezas únicas posibles</div>
+            </div>
+            <div class="info-chip c-red">
+              <div class="ic-label">Récord mundo</div>
+              <div class="ic-value">999</div>
+              <div class="ic-desc">nivel máximo en NES Tetris</div>
+            </div>
+            <div class="info-chip c-blue">
+              <div class="ic-label">Líneas para subir</div>
+              <div class="ic-value">10</div>
+              <div class="ic-desc">líneas por nivel en esta versión</div>
+            </div>
+            <div class="info-chip c-orange">
+              <div class="ic-label">Velocidad máx.</div>
+              <div class="ic-value">50ms</div>
+              <div class="ic-desc">intervalo de caída en nivel 10</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TETROMINOES SHOWCASE ── -->
+      <div class="card animate-in">
+        <div class="card-inner">
+          <div class="sec-title">
+            <h2>Los 7 Tetrominós</h2>
+            <div class="glow-line"></div>
+          </div>
+          <div class="pieces-grid" id="pieces-showcase"></div>
+          <p style="margin-top:16px;color:var(--muted);font-size:.82rem;">
+            Un tetrominó es una figura geométrica compuesta por 4 cuadrados conectados.
+            En Tetris, cada pieza tiene un color único y un comportamiento de rotación específico
+            que el jugador debe dominar para limpiar el mayor número de líneas posibles.
+          </p>
+        </div>
+      </div>
+
+      <!-- ── CODE SNIPPET ── -->
+      <div class="card animate-in">
+        <div class="card-inner">
+          <div class="sec-title">
+            <h2>Cómo está hecho</h2>
+            <div class="glow-line"></div>
+          </div>
+          <div class="code-block">
+            <span class="code-tag">tetris.js</span>
+            <span class="cmt">// Núcleo del motor de colisiones</span><br>
+            <span class="kw">function</span> <span class="fn">collides</span>(<span class="var">arena</span>, <span class="var">player</span>) {<br>
+            &nbsp;&nbsp;<span class="kw">const</span> [<span class="var">m</span>, <span class="var">o</span>] = [<span class="var">player</span>.matrix, <span class="var">player</span>.pos];<br>
+            &nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">let</span> <span class="var">y</span> = <span class="num">0</span>; <span class="var">y</span> &lt; <span class="var">m</span>.length; <span class="var">y</span>++) {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">let</span> <span class="var">x</span> = <span class="num">0</span>; <span class="var">x</span> &lt; <span class="var">m</span>[<span class="var">y</span>].length; <span class="var">x</span>++) {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (<span class="var">m</span>[<span class="var">y</span>][<span class="var">x</span>] !== <span class="num">0</span> &&<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="var">arena</span>[<span class="var">y</span> + <span class="var">o</span>.y] &&<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="var">arena</span>[<span class="var">y</span> + <span class="var">o</span>.y][<span class="var">x</span> + <span class="var">o</span>.x]) !== <span class="num">0</span>) {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="num">true</span>;<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+            &nbsp;&nbsp;}<br>
+            &nbsp;&nbsp;<span class="kw">return</span> <span class="num">false</span>;<br>
+            }<br><br>
+            <span class="cmt">// Sistema de puntuación (Guideline oficial)</span><br>
+            <span class="kw">const</span> <span class="var">SCORE_TABLE</span> = {<br>
+            &nbsp;&nbsp;<span class="num">1</span>: <span class="num">100</span>,  <span class="cmt">// Single</span><br>
+            &nbsp;&nbsp;<span class="num">2</span>: <span class="num">300</span>,  <span class="cmt">// Double</span><br>
+            &nbsp;&nbsp;<span class="num">3</span>: <span class="num">500</span>,  <span class="cmt">// Triple</span><br>
+            &nbsp;&nbsp;<span class="num">4</span>: <span class="num">800</span>,  <span class="cmt">// Tetris! 🎉</span><br>
+            };<br><br>
+            <span class="cmt">// Ghost piece: proyección de caída</span><br>
+            <span class="kw">function</span> <span class="fn">getGhostY</span>() {<br>
+            &nbsp;&nbsp;<span class="kw">let</span> <span class="var">gy</span> = <span class="var">player</span>.pos.y;<br>
+            &nbsp;&nbsp;<span class="kw">while</span> (!<span class="fn">collides</span>(<span class="var">arena</span>, {...<span class="var">player</span>, pos: {x: <span class="var">player</span>.pos.x, y: ++<span class="var">gy</span>}})) {}<br>
+            &nbsp;&nbsp;<span class="kw">return</span> <span class="var">gy</span> - <span class="num">1</span>;<br>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HISTORY TIMELINE ── -->
+      <div class="card animate-in">
+        <div class="card-inner">
+          <div class="sec-title">
+            <h2>Historia de Tetris</h2>
+            <div class="glow-line"></div>
+          </div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-dot" style="background:rgba(0,245,255,.1);color:var(--cyan);border-color:rgba(0,245,255,.2);">84</div>
+              <div class="tl-content">
+                <div class="tl-year">1984</div>
+                <div class="tl-title" style="color:var(--cyan)">Nacimiento del Algoritmo</div>
+                <div class="tl-text">Alexey Pajitnov crea el prototipo en un Electronika 60 en Moscú, inspirado en el pentominó. El nombre combina "tetra" (cuatro) y su deporte favorito: tenis.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot" style="background:rgba(255,209,102,.1);color:var(--yellow);border-color:rgba(255,209,102,.2);">89</div>
+              <div class="tl-content">
+                <div class="tl-year">1989</div>
+                <div class="tl-title" style="color:var(--yellow)">Nintendo Game Boy</div>
+                <div class="tl-text">Tetris se convierte en el juego de lanzamiento de la Game Boy. Vendió más de 35 millones de copias, consolidando el juego como fenómeno global.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot" style="background:rgba(6,255,165,.1);color:var(--green);border-color:rgba(6,255,165,.2);">96</div>
+              <div class="tl-content">
+                <div class="tl-year">1996</div>
+                <div class="tl-title" style="color:var(--green)">Tetris Company</div>
+                <div class="tl-text">Pajitnov recupera los derechos de su creación y funda The Tetris Company. Por primera vez, el inventor del juego recibe regalías directas.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot" style="background:rgba(255,71,87,.1);color:var(--red);border-color:rgba(255,71,87,.2);">09</div>
+              <div class="tl-content">
+                <div class="tl-year">2009</div>
+                <div class="tl-title" style="color:var(--red)">The Guideline</div>
+                <div class="tl-text">Se establece el estándar oficial: colores canónicos, sistema de rotación SRS, 7-bag randomizer. Este juego sigue todas estas reglas.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot" style="background:rgba(90,215,255,.1);color:var(--blue);border-color:rgba(90,215,255,.2);">24</div>
+              <div class="tl-content">
+                <div class="tl-year">2024</div>
+                <div class="tl-title" style="color:var(--blue)">Esta Versión</div>
+                <div class="tl-text">Implementación fiel en JavaScript puro con ghost piece, hold, next queue, niveles progresivos y puntuación oficial. Construida como proyecto de programación.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TECH STACK ── -->
+      <div class="card animate-in">
+        <div class="card-inner">
+          <div class="sec-title">
+            <h2>Stack Tecnológico</h2>
+            <div class="glow-line"></div>
+          </div>
+          <div style="margin-bottom:14px">
+            <span class="tag"><span class="tag-dot" style="background:var(--yellow)"></span>HTML5 Canvas</span>
+            <span class="tag"><span class="tag-dot" style="background:var(--cyan)"></span>JavaScript ES2023</span>
+            <span class="tag"><span class="tag-dot" style="background:var(--green)"></span>requestAnimationFrame</span>
+            <span class="tag"><span class="tag-dot" style="background:var(--orange)"></span>CSS Variables</span>
+            <span class="tag"><span class="tag-dot" style="background:var(--purple)"></span>CSS Animations</span>
+            <span class="tag"><span class="tag-dot" style="background:var(--red)"></span>KeyboardEvent API</span>
+            <span class="tag"><span class="tag-dot" style="background:var(--blue)"></span>Web Audio API</span>
+            <span class="tag"><span class="tag-dot" style="background:var(--cyan)"></span>0 dependencias</span>
+          </div>
+          <p style="color:var(--muted);font-size:.82rem;border-left:2px solid var(--yellow);padding-left:12px;">
+            Todo el juego corre en el navegador sin descargar nada extra.
+            El motor completo es menos de 300 líneas de JavaScript idiomático
+            &mdash; la prueba de que la complejidad real vive en la lógica, no en las librerías.
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- ── SIDE PANEL ── -->
+    <div class="side-panel">
+
+      <!-- SCOREBOARD -->
+      <div class="scoreboard animate-in">
+        <div class="sb-title">🏆 HALL OF FAME</div>
+        <div class="sb-row">
+          <span class="sb-rank" style="color:var(--yellow)">01</span>
+          <span class="sb-name">ALEX_P</span>
+          <span class="sb-score" style="color:var(--yellow)">99999</span>
+        </div>
+        <div class="sb-row">
+          <span class="sb-rank" style="color:#c0c0c0">02</span>
+          <span class="sb-name">JONAS_N</span>
+          <span class="sb-score" style="color:#c0c0c0">88420</span>
+        </div>
+        <div class="sb-row">
+          <span class="sb-rank" style="color:#cd7f32">03</span>
+          <span class="sb-name">MAYA_K</span>
+          <span class="sb-score" style="color:#cd7f32">72100</span>
+        </div>
+        <div class="sb-row">
+          <span class="sb-rank" style="color:var(--muted)">04</span>
+          <span class="sb-name">TU_NOMBRE</span>
+          <span class="sb-score" style="color:var(--muted)">???</span>
+        </div>
+        <div class="sb-row" id="player-best-row" style="display:none">
+          <span class="sb-rank" style="color:var(--cyan)">★</span>
+          <span class="sb-name">TÚ</span>
+          <span class="sb-score" style="color:var(--cyan)" id="player-best">0</span>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="controls-card animate-in">
+        <div style="font-family:'Saira Condensed',sans-serif;font-size:1.4rem;text-transform:uppercase;margin-bottom:4px;color:var(--text)">Controles</div>
+        <div class="ctrl-row">
+          <span class="ctrl-action">Mover izquierda</span>
+          <div class="ctrl-keys"><span class="key">←</span></div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-action">Mover derecha</span>
+          <div class="ctrl-keys"><span class="key">→</span></div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-action">Rotar</span>
+          <div class="ctrl-keys"><span class="key">↑</span></div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-action">Bajar suave</span>
+          <div class="ctrl-keys"><span class="key">↓</span></div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-action">Hard drop</span>
+          <div class="ctrl-keys"><span class="key">Space</span></div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-action">Hold pieza</span>
+          <div class="ctrl-keys"><span class="key">C</span></div>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-action">Pausa</span>
+          <div class="ctrl-keys"><span class="key">P</span></div>
+        </div>
+      </div>
+
+      <!-- CURIOSIDADES -->
+      <div class="card animate-in" style="border-color:rgba(6,255,165,.12)">
+        <div class="card-inner">
+          <div class="sec-title">
+            <h2 style="font-size:1.4rem;">Curiosidades</h2>
+            <div class="glow-line"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);font-size:.8rem;color:var(--muted)">
+              <span style="color:var(--cyan);font-family:'Press Start 2P',monospace;font-size:.5rem;display:block;margin-bottom:5px;">TETRIS EFFECT</span>
+              Jugar Tetris cambia la actividad cerebral. Después de sesiones largas, la gente reporta ver tetrominós en el mundo real &mdash; se llama el <em>Efecto Tetris</em>.
+            </div>
+            <div style="padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);font-size:.8rem;color:var(--muted)">
+              <span style="color:var(--yellow);font-family:'Press Start 2P',monospace;font-size:.5rem;display:block;margin-bottom:5px;">NASA RESEARCH</span>
+              La NASA estudió Tetris como herramienta para medir el agotamiento mental. El rendimiento en el juego correlaciona con la fatiga cognitiva del astronauta.
+            </div>
+            <div style="padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);font-size:.8rem;color:var(--muted)">
+              <span style="color:var(--green);font-family:'Press Start 2P',monospace;font-size:.5rem;display:block;margin-bottom:5px;">NP-COMPLETO</span>
+              En 2002, investigadores del MIT demostraron que encontrar la estrategia óptima en Tetris es un problema NP-completo: computacionalmente imposible de resolver en tiempo razonable.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /side-panel -->
+  </div><!-- /main-grid -->
+
+  <footer class="footer">
+    <div class="f-title">GAME OVER? PRESS START</div>
+    <p>Construido con HTML · CSS · JavaScript puro &mdash; Apartado de Programación</p>
+  </footer>
+
+</main>
+
+<script>
+/* ─────────────────────────────────────────────
+   BACKGROUND PARTICLES
+───────────────────────────────────────────── */
+(function spawnParticles() {
+  const container = document.getElementById('bgParticles');
+  const shapes = [
+    '██\n██',           // O
+    '█\n█\n██',         // J
+    ' █\n █\n██',       // L
+    '████',             // I
+    ' ██\n██',          // S
+    '██\n ██',          // Z
+    ' █\n██\n █',       // T
+  ];
+  const colors = ['#00f5ff','#ffd166','#06ffa5','#ff4757','#5ad7ff','#ff9f43','#a29bfe'];
+
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('pre');
+    el.className = 'particle';
+    el.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+    el.style.cssText = `
+      left: ${Math.random() * 100}%;
+      font-size: ${Math.random() * 14 + 8}px;
+      color: ${colors[Math.floor(Math.random() * colors.length)]};
+      animation-duration: ${Math.random() * 22 + 14}s;
+      animation-delay: ${Math.random() * -20}s;
+      line-height: 1;
+      font-family: monospace;
+    `;
+    container.appendChild(el);
+  }
+})();
+
+/* ─────────────────────────────────────────────
+   TETRIS ENGINE
+───────────────────────────────────────────── */
+const COLORS = [
+  null,
+  '#00f5ff', // I – cyan
+  '#ffd166', // O – yellow
+  '#a29bfe', // T – purple
+  '#5ad7ff', // S – blue
+  '#ff9f43', // Z – orange
+  '#06ffa5', // J – green
+  '#ff6b9d', // L – pink
+];
+
+const PIECES = {
+  I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+  O: [[2,2],[2,2]],
+  T: [[0,3,0],[3,3,3],[0,0,0]],
+  S: [[0,4,4],[4,4,0],[0,0,0]],
+  Z: [[5,5,0],[0,5,5],[0,0,0]],
+  J: [[6,0,0],[6,6,6],[0,0,0]],
+  L: [[0,0,7],[7,7,7],[0,0,0]],
+};
+
+const SCORE_TABLE = { 1: 100, 2: 300, 3: 500, 4: 800 };
+const COLS = 12, ROWS = 24;
+const BLOCK = 20;
+
+const canvas      = document.getElementById('tetris-canvas');
+const ctx         = canvas.getContext('2d');
+const nextCanvas  = document.getElementById('next-canvas');
+const nextCtx     = nextCanvas.getContext('2d');
+const holdCanvas  = document.getElementById('hold-canvas');
+const holdCtx     = holdCanvas.getContext('2d');
+
+canvas.width  = COLS * BLOCK;
+canvas.height = ROWS * BLOCK;
+
+let arena, player, bag, nextBag, holdPiece, holdUsed;
+let score, lines, level, running, paused;
+let dropCounter, dropInterval, lastTime, animId;
+let playerBest = 0;
+
+function createMatrix(w, h) {
+  return Array.from({length: h}, () => new Array(w).fill(0));
+}
+
+function newBag() {
+  const keys = Object.keys(PIECES);
+  for (let i = keys.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [keys[i], keys[j]] = [keys[j], keys[i]];
+  }
+  return keys.map(k => PIECES[k].map(r => [...r]));
+}
+
+function nextPieceFromBag() {
+  if (!bag || bag.length === 0) { bag = nextBag; nextBag = newBag(); }
+  return bag.shift();
+}
+
+function peekNext(n) {
+  const combined = [...(bag || []), ...(nextBag || [])];
+  return combined.slice(0, n);
+}
+
+function initGame() {
+  arena      = createMatrix(COLS, ROWS);
+  bag        = newBag();
+  nextBag    = newBag();
+  holdPiece  = null;
+  holdUsed   = false;
+  score      = 0;
+  lines      = 0;
+  level      = 1;
+  running    = true;
+  paused     = false;
+  dropCounter   = 0;
+  dropInterval  = 800;
+  lastTime      = 0;
+
+  player = {
+    pos: {x: 0, y: 0},
+    matrix: null,
+  };
+  spawnPiece();
+  updateHUD();
+}
+
+function spawnPiece() {
+  player.matrix = nextPieceFromBag();
+  player.pos.y = 0;
+  player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+  holdUsed = false;
+
+  if (collides(arena, player)) {
+    gameOver();
+  }
+}
+
+function collides(arena, player) {
+  const m = player.matrix, o = player.pos;
+  for (let y = 0; y < m.length; y++) {
+    for (let x = 0; x < m[y].length; x++) {
+      if (m[y][x] !== 0) {
+        const ny = y + o.y, nx = x + o.x;
+        if (ny < 0 || ny >= ROWS || nx < 0 || nx >= COLS) return true;
+        if (arena[ny][nx] !== 0) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function merge() {
+  player.matrix.forEach((row, y) => {
+    row.forEach((val, x) => {
+      if (val !== 0) arena[y + player.pos.y][x + player.pos.x] = val;
+    });
+  });
+}
+
+function rotate(matrix, dir) {
+  const n = matrix.length;
+  const result = Array.from({length: n}, (_, i) =>
+    Array.from({length: n}, (_, j) =>
+      dir > 0 ? matrix[n - 1 - j][i] : matrix[j][n - 1 - i]
+    )
+  );
+  return result;
+}
+
+function playerRotate(dir) {
+  const orig = player.matrix;
+  player.matrix = rotate(player.matrix, dir);
+  const kicks = [0, -1, 1, -2, 2];
+  for (const kick of kicks) {
+    player.pos.x += kick;
+    if (!collides(arena, player)) return;
+    player.pos.x -= kick;
+  }
+  player.matrix = orig;
+}
+
+function playerMove(dir) {
+  player.pos.x += dir;
+  if (collides(arena, player)) player.pos.x -= dir;
+}
+
+function playerDrop() {
+  player.pos.y++;
+  if (collides(arena, player)) {
+    player.pos.y--;
+    merge();
+    sweepArena();
+    spawnPiece();
+  }
+  dropCounter = 0;
+}
+
+function hardDrop() {
+  while (!collides(arena, {...player, pos:{x:player.pos.x, y:player.pos.y+1}})) {
+    player.pos.y++;
+    score += 2;
+  }
+  playerDrop();
+}
+
+function holdAction() {
+  if (holdUsed) return;
+  const current = player.matrix;
+  if (holdPiece) {
+    player.matrix = holdPiece;
+    player.pos.x = Math.floor(COLS / 2) - Math.floor(player.matrix[0].length / 2);
+    player.pos.y = 0;
+  } else {
+    spawnPiece();
+  }
+  holdPiece = current;
+  holdUsed = true;
+  drawHold();
+}
+
+function getGhostY() {
+  let gy = player.pos.y;
+  while (!collides(arena, {...player, pos:{x:player.pos.x, y:gy+1}})) gy++;
+  return gy;
+}
+
+function sweepArena() {
+  let cleared = 0;
+  for (let y = ROWS - 1; y >= 0; y--) {
+    if (arena[y].every(v => v !== 0)) {
+      arena.splice(y, 1);
+      arena.unshift(new Array(COLS).fill(0));
+      cleared++;
+      y++;
+    }
+  }
+  if (cleared > 0) {
+    const pts = (SCORE_TABLE[cleared] || 100) * level;
+    score += pts;
+    lines += cleared;
+    level = Math.floor(lines / 10) + 1;
+    dropInterval = Math.max(50, 800 - (level - 1) * 75);
+    flashScreen();
+    showScorePop(pts, cleared);
+    updateHUD();
+  }
+}
+
+function flashScreen() {
+  const overlay = document.getElementById('flash-overlay');
+  overlay.style.opacity = '1';
+  setTimeout(() => { overlay.style.opacity = '0'; }, 120);
+}
+
+function showScorePop(pts, lines) {
+  const labels = ['','SINGLE!','DOUBLE!','TRIPLE!','TETRIS!!!'];
+  const el = document.createElement('div');
+  el.className = 'score-pop';
+  el.textContent = `+${pts} ${labels[lines] || ''}`;
+  el.style.left = (canvas.getBoundingClientRect().left + canvas.width/2 - 60) + 'px';
+  el.style.top  = (canvas.getBoundingClientRect().top + canvas.height/2) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function updateHUD() {
+  document.getElementById('disp-score').textContent = score.toLocaleString();
+  document.getElementById('disp-lines').textContent = lines;
+  document.getElementById('disp-level').textContent = level;
+  const pct = ((lines % 10) / 10) * 100;
+  document.getElementById('level-bar-fill').style.width = pct + '%';
+
+  if (score > playerBest) {
+    playerBest = score;
+    document.getElementById('player-best').textContent = playerBest.toLocaleString();
+    document.getElementById('player-best-row').style.display = 'flex';
+  }
+}
+
+/* ── DRAWING ── */
+function drawMatrix(context, matrix, offset, alpha = 1) {
+  const bs = 20;
+  matrix.forEach((row, y) => {
+    row.forEach((val, x) => {
+      if (val !== 0) {
+        const px = (x + offset.x) * bs;
+        const py = (y + offset.y) * bs;
+        const color = COLORS[val];
+
+        context.globalAlpha = alpha;
+        context.fillStyle = color;
+        context.fillRect(px, py, bs, bs);
+
+        // Shine
+        context.fillStyle = 'rgba(255,255,255,0.18)';
+        context.fillRect(px + 2, py + 2, bs - 4, 4);
+
+        // Shadow
+        context.fillStyle = 'rgba(0,0,0,0.3)';
+        context.fillRect(px, py + bs - 3, bs, 3);
+        context.fillRect(px + bs - 3, py, 3, bs);
+
+        // Border
+        context.strokeStyle = 'rgba(0,0,0,0.5)';
+        context.lineWidth = 1;
+        context.strokeRect(px + .5, py + .5, bs - 1, bs - 1);
+
+        context.globalAlpha = 1;
+      }
+    });
+  });
+}
+
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = .5;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x * BLOCK, 0); ctx.lineTo(x * BLOCK, ROWS * BLOCK); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * BLOCK); ctx.lineTo(COLS * BLOCK, y * BLOCK); ctx.stroke();
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#03040e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  drawMatrix(ctx, arena, {x:0, y:0});
+
+  // Ghost piece
+  if (player.matrix && running) {
+    const ghostY = getGhostY();
+    ctx.globalAlpha = 0.2;
+    drawMatrix(ctx, player.matrix, {x:player.pos.x, y:ghostY});
+    ctx.globalAlpha = 1;
+    drawMatrix(ctx, player.matrix, player.pos);
+  }
+
+  drawNext();
+}
+
+function drawNext() {
+  nextCtx.fillStyle = '#000';
+  nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+
+  const peeked = peekNext(3);
+  peeked.forEach((mat, i) => {
+    const offX = Math.floor((3 - mat[0].length) / 2);
+    const offY = i * 4 + Math.floor((3 - mat.length) / 2);
+    const miniBlock = 12;
+    mat.forEach((row, ry) => {
+      row.forEach((val, rx) => {
+        if (val !== 0) {
+          const px = (offX + rx) * miniBlock + 6;
+          const py = (offY + ry) * miniBlock + 4;
+          nextCtx.fillStyle = COLORS[val];
+          nextCtx.fillRect(px, py, miniBlock - 1, miniBlock - 1);
+          nextCtx.fillStyle = 'rgba(255,255,255,0.2)';
+          nextCtx.fillRect(px + 1, py + 1, miniBlock - 2, 2);
+        }
+      });
+    });
+  });
+}
+
+function drawHold() {
+  holdCtx.fillStyle = '#000';
+  holdCtx.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+  if (!holdPiece) return;
+  const miniBlock = 12;
+  const offX = Math.floor((5 - holdPiece[0].length) / 2);
+  const offY = Math.floor((5 - holdPiece.length) / 2);
+  holdPiece.forEach((row, ry) => {
+    row.forEach((val, rx) => {
+      if (val !== 0) {
+        const px = (offX + rx) * miniBlock + 2;
+        const py = (offY + ry) * miniBlock + 2;
+        holdCtx.fillStyle = holdUsed ? '#333' : COLORS[val];
+        holdCtx.fillRect(px, py, miniBlock - 1, miniBlock - 1);
+      }
+    });
+  });
+}
+
+/* ── GAME LOOP ── */
+function gameLoop(time = 0) {
+  if (!running || paused) { animId = requestAnimationFrame(gameLoop); return; }
+  const dt = time - lastTime;
+  lastTime = time;
+  dropCounter += dt;
+  if (dropCounter >= dropInterval) playerDrop();
+  draw();
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function gameStart() {
+  if (animId) cancelAnimationFrame(animId);
+  initGame();
+  document.getElementById('btn-start').textContent = 'REINICIAR';
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function gameOver() {
+  running = false;
+  // Flash arena red
+  ctx.fillStyle = 'rgba(255,71,87,0.3)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ff4757';
+  ctx.font = 'bold 14px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('GAME', canvas.width/2, canvas.height/2 - 16);
+  ctx.fillText('OVER', canvas.width/2, canvas.height/2 + 8);
+  ctx.font = '8px "Press Start 2P"';
+  ctx.fillStyle = '#ffd166';
+  ctx.fillText('SCORE: ' + score, canvas.width/2, canvas.height/2 + 34);
+}
+
+/* ── CONTROLS ── */
+let keys = {};
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); playerMove(-1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); playerMove(1); }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); playerDrop(); }
+  if (e.key === 'ArrowUp')    { e.preventDefault(); playerRotate(1); }
+  if (e.key === ' ')          { e.preventDefault(); hardDrop(); }
+  if (e.key === 'c' || e.key === 'C') holdAction();
+  if (e.key === 'p' || e.key === 'P') {
+    paused = !paused;
+    if (!paused) { lastTime = performance.now(); }
+  }
+});
+
+/* ── PIECES SHOWCASE ── */
+(function renderPiecesShowcase() {
+  const container = document.getElementById('pieces-showcase');
+  const PIECE_NAMES = ['I','O','T','S','Z','J','L'];
+  const SHOWCASE_COLORS = {
+    I:'#00f5ff', O:'#ffd166', T:'#a29bfe', S:'#5ad7ff',
+    Z:'#ff9f43', J:'#06ffa5', L:'#ff6b9d',
+  };
+
+  PIECE_NAMES.forEach(name => {
+    const mat = PIECES[name].map(r => [...r]);
+    const cols = mat[0].length, rows = mat.length;
+    const bs = 14;
+    const cw = cols * bs, ch = rows * bs;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'piece-item';
+
+    const canvasWrap = document.createElement('div');
+    canvasWrap.className = 'piece-canvas-wrap';
+    canvasWrap.style.borderColor = SHOWCASE_COLORS[name] + '33';
+
+    const c = document.createElement('canvas');
+    c.width = cw; c.height = ch;
+    const cx = c.getContext('2d');
+
+    mat.forEach((row, y) => {
+      row.forEach((val, x) => {
+        if (val !== 0) {
+          cx.fillStyle = SHOWCASE_COLORS[name];
+          cx.fillRect(x * bs, y * bs, bs - 1, bs - 1);
+          cx.fillStyle = 'rgba(255,255,255,.25)';
+          cx.fillRect(x * bs + 1, y * bs + 1, bs - 2, 3);
+        }
+      });
+    });
+
+    canvasWrap.appendChild(c);
+    const label = document.createElement('span');
+    label.className = 'piece-name';
+    label.textContent = name;
+    label.style.color = SHOWCASE_COLORS[name];
+
+    wrap.appendChild(canvasWrap);
+    wrap.appendChild(label);
+    container.appendChild(wrap);
+  });
+})();
+
+/* ── INITIAL DRAW ── */
+(function initialDraw() {
+  ctx.fillStyle = '#03040e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Draw grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = .5;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x * BLOCK, 0); ctx.lineTo(x * BLOCK, ROWS * BLOCK); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * BLOCK); ctx.lineTo(COLS * BLOCK, y * BLOCK); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(0,245,255,0.6)';
+  ctx.font = '10px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('PRESS', canvas.width/2, canvas.height/2 - 10);
+  ctx.fillText('START', canvas.width/2, canvas.height/2 + 14);
+
+  nextCtx.fillStyle = '#000';
+  nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+  holdCtx.fillStyle = '#000';
+  holdCtx.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ilustración — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Righteous&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#07050e; --panel:rgba(18,12,30,.85); --line:rgba(255,255,255,.07); --line-b:rgba(255,255,255,.13);
+      --text:#f0e8ff; --muted:#8070a8;
+      --acc:#b06eff; --acc-glow:rgba(176,110,255,.45);
+      --acc2:#ff6b9d; --acc3:#ffd166; --radius:16px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:"Outfit",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:radial-gradient(ellipse 60% 50% at 20% 10%,rgba(176,110,255,.12),transparent),
+                 radial-gradient(ellipse 50% 40% at 80% 90%,rgba(255,107,157,.09),transparent);}
+    .page{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:32px 22px 60px;}
+
+    /* NAV */
+    nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+      margin-bottom:44px;padding:12px 20px;border:1px solid var(--line);border-radius:999px;
+      background:rgba(255,255,255,.03);backdrop-filter:blur(20px);}
+    .nav-brand{font-family:"Righteous",sans-serif;font-size:.9rem;letter-spacing:1px;color:var(--acc);
+      text-shadow:0 0 20px var(--acc-glow);}
+    .nav-links{display:flex;gap:8px;flex-wrap:wrap;}
+    .nav-link{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;
+      border:1px solid var(--line-b);background:rgba(255,255,255,.03);color:var(--muted);
+      font-size:.8rem;text-decoration:none;transition:all .25s;}
+    .nav-link:hover{color:var(--text);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);}
+    .nav-dot{width:6px;height:6px;border-radius:50%;}
+
+    /* HEADER */
+    .header-tag{display:inline-flex;align-items:center;gap:10px;padding:5px 14px;border-radius:999px;
+      border:1px solid rgba(176,110,255,.3);background:rgba(176,110,255,.08);font-size:.72rem;
+      font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--acc);margin-bottom:18px;}
+    .header-tag::before{content:"✦";font-size:.7rem;animation:spin 4s linear infinite;display:inline-block;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    h1{font-family:"Righteous",sans-serif;font-size:clamp(2.4rem,5.5vw,5rem);font-weight:400;
+      line-height:.92;margin-bottom:18px;letter-spacing:.5px;}
+    h1 em{font-style:normal;color:var(--acc);text-shadow:0 0 40px var(--acc-glow);}
+    .header-sub{color:var(--muted);font-size:1rem;max-width:620px;line-height:1.7;margin-bottom:36px;}
+
+    /* CONTROLS */
+    .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:32px;
+      padding:14px 18px;border:1px solid var(--line);border-radius:var(--radius);
+      background:var(--panel);backdrop-filter:blur(14px);}
+    .ctrl-label{font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+    .ctrl-btn{padding:6px 16px;border-radius:999px;border:1px solid var(--line-b);background:transparent;
+      color:var(--muted);font-family:"Outfit",sans-serif;font-size:.8rem;font-weight:500;cursor:pointer;transition:all .2s;}
+    .ctrl-btn:hover,.ctrl-btn.active{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600;
+      box-shadow:0 0 20px var(--acc-glow);}
+    .ctrl-spacer{flex:1;}
+
+    /* MASONRY */
+    .gallery{columns:4 260px;column-gap:12px;}
+    .thumb{break-inside:avoid;margin-bottom:12px;position:relative;overflow:hidden;border-radius:14px;
+      background:rgba(255,255,255,.04);cursor:pointer;border:1px solid var(--line);}
+    .thumb img{width:100%;height:auto;display:block;transition:transform .5s cubic-bezier(.25,.46,.45,.94);}
+    .thumb:hover img{transform:scale(1.05);}
+
+    /* Placeholder */
+    .img-ph{width:100%;aspect-ratio:3/4;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:8px;background:linear-gradient(135deg,rgba(176,110,255,.06),rgba(255,107,157,.04));
+      border:2px dashed rgba(176,110,255,.2);}
+    .img-ph .ph-icon{font-size:2rem;opacity:.4;}
+    .img-ph .ph-file{font-size:.62rem;color:rgba(176,110,255,.55);font-family:monospace;
+      letter-spacing:.5px;text-align:center;padding:0 10px;}
+
+    .thumb-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(7,5,14,.95) 0%,transparent 55%);
+      opacity:0;transition:opacity .3s;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;}
+    .thumb:hover .thumb-overlay{opacity:1;}
+    .thumb-title{font-size:.82rem;font-weight:600;color:#fff;margin-bottom:3px;}
+    .thumb-meta{font-size:.67rem;color:rgba(255,255,255,.5);}
+    .thumb-zoom{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;
+      background:rgba(176,110,255,.15);border:1px solid rgba(176,110,255,.35);color:var(--acc);
+      display:flex;align-items:center;justify-content:center;font-size:.82rem;opacity:0;transition:opacity .3s;}
+    .thumb:hover .thumb-zoom{opacity:1;}
+    .thumb-tag{position:absolute;top:10px;left:10px;padding:3px 10px;border-radius:999px;
+      background:rgba(18,12,30,.8);border:1px solid rgba(176,110,255,.25);color:var(--acc);
+      font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      opacity:0;transition:opacity .3s;backdrop-filter:blur(8px);}
+    .thumb:hover .thumb-tag{opacity:1;}
+
+    /* LIGHTBOX */
+    .lb{position:fixed;inset:0;z-index:9999;display:flex;background:rgba(5,3,10,.96);
+      backdrop-filter:blur(24px);opacity:0;pointer-events:none;transition:opacity .3s;}
+    .lb.open{opacity:1;pointer-events:all;}
+    .lb-left{flex:1;display:flex;align-items:center;justify-content:center;padding:60px 40px;position:relative;}
+    .lb-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;
+      box-shadow:0 40px 120px rgba(0,0,0,.7);border:1px solid rgba(176,110,255,.2);}
+    .lb.open .lb-img{animation:popIn .3s cubic-bezier(.34,1.56,.64,1);}
+    @keyframes popIn{from{transform:scale(.9);opacity:0;}to{transform:scale(1);opacity:1;}}
+    .lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;
+      border:1px solid var(--line-b);background:rgba(18,12,30,.8);color:var(--text);font-size:1.3rem;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(10px);}
+    .lb-nav:hover{background:rgba(176,110,255,.2);border-color:var(--acc);color:var(--acc);}
+    .lb-prev{left:12px;} .lb-next{right:12px;}
+    .lb-panel{width:300px;flex-shrink:0;border-left:1px solid var(--line);background:rgba(12,8,22,.9);
+      display:flex;flex-direction:column;}
+    .lb-panel-header{padding:20px 22px;border-bottom:1px solid var(--line);}
+    .lb-close{float:right;width:36px;height:36px;border-radius:9px;border:1px solid var(--line-b);
+      background:transparent;color:var(--muted);font-size:1rem;cursor:pointer;display:flex;
+      align-items:center;justify-content:center;transition:all .2s;}
+    .lb-close:hover{background:rgba(255,107,157,.15);border-color:var(--acc2);color:var(--acc2);}
+    .lb-panel-sub{font-family:"Righteous",sans-serif;font-size:.8rem;color:var(--acc);margin-top:12px;margin-bottom:3px;}
+    .lb-panel-title{font-family:"Righteous",sans-serif;font-size:1.2rem;line-height:1.2;}
+    .lb-panel-body{flex:1;padding:20px 22px;overflow-y:auto;}
+    .lb-detail{margin-bottom:18px;}
+    .lb-detail-label{font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+    .lb-detail-val{font-size:.88rem;color:var(--text);line-height:1.6;}
+    .lb-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+    .lb-tag{padding:4px 10px;border-radius:999px;background:rgba(176,110,255,.1);
+      border:1px solid rgba(176,110,255,.2);color:var(--acc);font-size:.7rem;font-weight:600;}
+    .lb-panel-footer{padding:18px 22px;border-top:1px solid var(--line);}
+    .lb-dl-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;
+      border-radius:10px;border:none;background:linear-gradient(135deg,var(--acc),var(--acc2));
+      color:#fff;font-family:"Outfit",sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;
+      transition:all .25s;box-shadow:0 6px 24px rgba(176,110,255,.3);}
+    .lb-dl-btn:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(176,110,255,.5);}
+    .lb-counter-row{display:flex;justify-content:center;margin-top:10px;}
+    .lb-counter{font-size:.78rem;color:var(--muted);}
+    .lb-dots-row{display:flex;gap:5px;justify-content:center;margin-top:8px;}
+    .lb-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);cursor:pointer;transition:all .2s;}
+    .lb-dot.active{background:var(--acc);width:16px;border-radius:2px;box-shadow:0 0 8px var(--acc-glow);}
+
+    /* SEC ROW */
+    .sec-row{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+    .sec-row h2{font-family:"Righteous",sans-serif;font-size:1.3rem;white-space:nowrap;}
+    .sec-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(176,110,255,.6),rgba(255,107,157,.4),transparent);}
+    .sec-count{font-size:.75rem;color:var(--muted);white-space:nowrap;}
+
+    footer{margin-top:52px;padding:20px 0 8px;border-top:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+    .f-brand{font-family:"Righteous",sans-serif;font-size:.88rem;color:var(--acc);}
+    .f-copy{font-size:.78rem;color:var(--muted);}
+
+    @media(max-width:700px){
+      .gallery{columns:2 160px;}
+      .lb{flex-direction:column;}
+      .lb-panel{width:100%;border-left:none;border-top:1px solid var(--line);max-height:45vh;}
+      .lb-left{padding:30px 16px 10px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb">
+  <div class="lb-left">
+    <button class="lb-nav lb-prev" onclick="navigate(-1)">‹</button>
+    <img class="lb-img" id="lb-img" src="" alt="">
+    <button class="lb-nav lb-next" onclick="navigate(1)">›</button>
+  </div>
+  <div class="lb-panel">
+    <div class="lb-panel-header">
+      <button class="lb-close" onclick="closeLB()">✕</button>
+      <p class="lb-panel-sub" id="lb-sub">Ilustración</p>
+      <h3 class="lb-panel-title" id="lb-title">Título</h3>
+    </div>
+    <div class="lb-panel-body">
+      <div class="lb-detail">
+        <p class="lb-detail-label">Descripción</p>
+        <p class="lb-detail-val" id="lb-desc">—</p>
+      </div>
+      <div class="lb-detail">
+        <p class="lb-detail-label">Herramientas</p>
+        <p class="lb-detail-val" id="lb-tools">—</p>
+      </div>
+      <div class="lb-detail">
+        <p class="lb-detail-label">Etiquetas</p>
+        <div class="lb-tags" id="lb-tags"></div>
+      </div>
+    </div>
+    <div class="lb-panel-footer">
+      <button class="lb-dl-btn" onclick="dlCurrent()">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M5 13l5 5 5-5M3 17h14"/></svg>
+        Descargar
+      </button>
+      <div class="lb-counter-row"><span class="lb-counter" id="lb-counter">1 / 1</span></div>
+      <div class="lb-dots-row" id="lb-dots"></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <nav>
+    <span class="nav-brand">✦ Ilustración</span>
+    <div class="nav-links">
+      <a href="index.html#portfolio" class="nav-link">Portafolio</a>
+      <a href="cv.html" class="nav-link"><span class="nav-dot" style="background:var(--acc3);"></span>CV</a>
+      <a href="index.html" class="nav-link"><span class="nav-dot" style="background:#9ef01a;"></span>← Inicio</a>
+    </div>
+  </nav>
+
+  <div class="header-tag">Ilustración Digital</div>
+  <h1>Mi <em>Galería</em><br>de Ilustración</h1>
+  <p class="header-sub">Arte digital y concept art. Haz clic en cualquier ilustración para ver detalles, herramientas usadas y descargarla.</p>
+
+  <div class="controls">
+    <span class="ctrl-label">Estilo:</span>
+    <button class="ctrl-btn active" data-filter="all">Todos</button>
+    <button class="ctrl-btn" data-filter="digital">Digital</button>
+    <button class="ctrl-btn" data-filter="concept">Concept Art</button>
+    <button class="ctrl-btn" data-filter="fantasia">Fantasía</button>
+    <button class="ctrl-btn" data-filter="retrato">Retrato</button>
+    <div class="ctrl-spacer"></div>
+  </div>
+
+  <div class="sec-row">
+    <h2>Ilustraciones</h2>
+    <div class="sec-line"></div>
+    <span class="sec-count" id="count-lbl">8 obras</span>
+  </div>
+
+  <!-- ============================================================
+       GALERÍA DE ILUSTRACIONES
+       Para agregar / editar una ilustración:
+         1. Pon tu imagen en:  img/ilustracion/ilus-01.jpg
+         2. Cambia src="img/ilustracion/ilus-01.jpg"
+         3. Edita data-title, data-sub, data-desc, data-tools, data-tags
+         4. data-cat: digital | concept | fantasia | retrato
+       ============================================================ -->
+  <div class="gallery" id="gallery">
+
+    <!-- ILUS 1 -->
+    <div class="thumb" data-idx="0" data-cat="digital"
+      data-title="Ilustración 1" data-sub="Ilustración Digital"
+      data-desc="Descripción de esta ilustración. Cuéntanos el proceso, la inspiración o la técnica."
+      data-tools="Procreate · Photoshop" data-tags="digital,arte">
+      <img src="img/ilustracion/ilus-01.jpg" alt="Ilustración 1"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-01.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 1</p><p class="thumb-meta">Digital</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Digital</span>
+    </div>
+
+    <!-- ILUS 2 -->
+    <div class="thumb" data-idx="1" data-cat="fantasia"
+      data-title="Ilustración 2" data-sub="Ilustración de Fantasía"
+      data-desc="Descripción de esta ilustración."
+      data-tools="Clip Studio Paint" data-tags="fantasía,arte">
+      <img src="img/ilustracion/ilus-02.jpg" alt="Ilustración 2"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-02.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 2</p><p class="thumb-meta">Fantasía</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Fantasía</span>
+    </div>
+
+    <!-- ILUS 3 -->
+    <div class="thumb" data-idx="2" data-cat="concept"
+      data-title="Ilustración 3" data-sub="Concept Art"
+      data-desc="Descripción de esta ilustración."
+      data-tools="Photoshop · Sketchbook" data-tags="concept art,diseño">
+      <img src="img/ilustracion/ilus-03.jpg" alt="Ilustración 3"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-03.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 3</p><p class="thumb-meta">Concept Art</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Concept</span>
+    </div>
+
+    <!-- ILUS 4 -->
+    <div class="thumb" data-idx="3" data-cat="retrato"
+      data-title="Ilustración 4" data-sub="Retrato Digital"
+      data-desc="Descripción de esta ilustración."
+      data-tools="Procreate · iPad Pro" data-tags="retrato,digital">
+      <img src="img/ilustracion/ilus-04.jpg" alt="Ilustración 4"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-04.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 4</p><p class="thumb-meta">Retrato</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Retrato</span>
+    </div>
+
+    <!-- ILUS 5 -->
+    <div class="thumb" data-idx="4" data-cat="digital"
+      data-title="Ilustración 5" data-sub="Arte Digital"
+      data-desc="Descripción de esta ilustración."
+      data-tools="Illustrator · Photoshop" data-tags="abstracto,digital">
+      <img src="img/ilustracion/ilus-05.jpg" alt="Ilustración 5"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-05.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 5</p><p class="thumb-meta">Digital</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Digital</span>
+    </div>
+
+    <!-- ILUS 6 -->
+    <div class="thumb" data-idx="5" data-cat="fantasia"
+      data-title="Ilustración 6" data-sub="Ilustración de Fantasía"
+      data-desc="Descripción de esta ilustración."
+      data-tools="Clip Studio · Photoshop" data-tags="fantasía,épico">
+      <img src="img/ilustracion/ilus-06.jpg" alt="Ilustración 6"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-06.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 6</p><p class="thumb-meta">Fantasía</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Fantasía</span>
+    </div>
+
+    <!-- ILUS 7 -->
+    <div class="thumb" data-idx="6" data-cat="concept"
+      data-title="Ilustración 7" data-sub="Concept Art"
+      data-desc="Descripción de esta ilustración."
+      data-tools="Photoshop · ArtRage" data-tags="concept,ciudad">
+      <img src="img/ilustracion/ilus-07.jpg" alt="Ilustración 7"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-07.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 7</p><p class="thumb-meta">Concept Art</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Concept</span>
+    </div>
+
+    <!-- ILUS 8 -->
+    <div class="thumb" data-idx="7" data-cat="retrato"
+      data-title="Ilustración 8" data-sub="Character Design"
+      data-desc="Descripción de esta ilustración."
+      data-tools="Procreate · Photoshop" data-tags="personaje,diseño">
+      <img src="img/ilustracion/ilus-08.jpg" alt="Ilustración 8"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="img-ph" style="display:none;"><span class="ph-icon">🎨</span><span class="ph-file">ilus-08.jpg</span></div>
+      <div class="thumb-overlay"><p class="thumb-title">Ilustración 8</p><p class="thumb-meta">Retrato</p></div>
+      <span class="thumb-zoom">⤢</span><span class="thumb-tag">Retrato</span>
+    </div>
+
+  </div>
+
+  <footer>
+    <span class="f-brand">✦ Ilustración Digital</span>
+    <span class="f-copy">Arte · Concept Art · Diseño Visual</span>
+  </footer>
+</div>
+
+<script>
+  let currentIdx = 0;
+  let visibleItems = [];
+
+  function buildItems() {
+    visibleItems = [];
+    document.querySelectorAll('.thumb:not([style*="none"])').forEach(el => {
+      const img = el.querySelector('img');
+      visibleItems.push({
+        idx: parseInt(el.dataset.idx),
+        src: img ? img.src : '',
+        title: el.dataset.title,
+        sub: el.dataset.sub,
+        desc: el.dataset.desc,
+        tools: el.dataset.tools,
+        tags: (el.dataset.tags || '').split(',')
+      });
+    });
+    buildDots();
+  }
+
+  function buildDots() {
+    const dc = document.getElementById('lb-dots'); dc.innerHTML = '';
+    visibleItems.slice(0, 12).forEach((_, i) => {
+      const d = document.createElement('span');
+      d.className = 'lb-dot' + (i === currentIdx ? ' active' : '');
+      d.onclick = () => jumpTo(i); dc.appendChild(d);
+    });
+  }
+
+  function openLB(rawIdx) {
+    buildItems();
+    currentIdx = visibleItems.findIndex(it => it.idx === rawIdx);
+    if (currentIdx < 0) currentIdx = 0;
+    showCurrent();
+    document.getElementById('lb').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function showCurrent() {
+    const it = visibleItems[currentIdx]; if (!it) return;
+    const img = document.getElementById('lb-img');
+    img.style.opacity = '0'; img.src = it.src;
+    img.onload = () => { img.style.transition = 'opacity .3s'; img.style.opacity = '1'; };
+    document.getElementById('lb-title').textContent = it.title;
+    document.getElementById('lb-sub').textContent = it.sub;
+    document.getElementById('lb-desc').textContent = it.desc;
+    document.getElementById('lb-tools').textContent = it.tools;
+    const tc = document.getElementById('lb-tags'); tc.innerHTML = '';
+    it.tags.forEach(t => {
+      const sp = document.createElement('span'); sp.className = 'lb-tag';
+      sp.textContent = t.trim(); tc.appendChild(sp);
+    });
+    document.getElementById('lb-counter').textContent = `${currentIdx + 1} / ${visibleItems.length}`;
+    document.querySelectorAll('.lb-dot').forEach((d, i) => d.classList.toggle('active', i === currentIdx));
+  }
+
+  function navigate(dir) { currentIdx = (currentIdx + dir + visibleItems.length) % visibleItems.length; showCurrent(); }
+  function jumpTo(i) { currentIdx = i; showCurrent(); }
+  function closeLB() { document.getElementById('lb').classList.remove('open'); document.body.style.overflow = ''; }
+  function dlCurrent() {
+    const it = visibleItems[currentIdx]; if (!it) return;
+    const a = document.createElement('a'); a.href = it.src;
+    a.download = it.title.replace(/\s+/g, '-').toLowerCase() + '.jpg'; a.click();
+  }
+
+  document.querySelectorAll('.thumb').forEach(th => {
+    th.addEventListener('click', () => openLB(parseInt(th.dataset.idx)));
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLB();
+    if (e.key === 'ArrowRight') navigate(1);
+    if (e.key === 'ArrowLeft') navigate(-1);
+  });
+
+  document.querySelectorAll('.ctrl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.filter; let v = 0;
+      document.querySelectorAll('.thumb').forEach(th => {
+        const m = f === 'all' || th.dataset.cat === f;
+        th.style.display = m ? '' : 'none'; if (m) v++;
+      });
+      document.getElementById('count-lbl').textContent = `${v} obra${v !== 1 ? 's' : ''}`;
+    });
+  });
+
+  buildItems();
+</script>
+</body>
+</html>

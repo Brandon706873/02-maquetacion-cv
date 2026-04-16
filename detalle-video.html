@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Videos — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#040508; --panel:rgba(10,12,20,.9); --line:rgba(255,255,255,.07); --line-b:rgba(255,255,255,.13);
+      --text:#e0e8ff; --muted:#6070a0;
+      --acc:#9ef01a; --acc-glow:rgba(158,240,26,.4);
+      --acc2:#5ad7ff; --acc3:#ffd166;
+      --radius:14px; --player-r:20px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:"Syne",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:radial-gradient(ellipse 55% 40% at 5% 5%,rgba(158,240,26,.09),transparent),
+                 radial-gradient(ellipse 50% 40% at 95% 95%,rgba(90,215,255,.07),transparent);}
+    .page{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:28px 20px 60px;}
+
+    nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+      margin-bottom:36px;padding:12px 18px;border:1px solid var(--line);border-radius:999px;
+      background:rgba(255,255,255,.02);backdrop-filter:blur(20px);}
+    .nav-brand{font-family:"JetBrains Mono",monospace;font-size:.8rem;color:var(--acc);letter-spacing:1px;text-shadow:0 0 20px var(--acc-glow);}
+    .nav-links{display:flex;gap:6px;}
+    .nav-link{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;
+      border:1px solid var(--line-b);background:rgba(255,255,255,.03);color:var(--muted);
+      font-size:.78rem;text-decoration:none;transition:all .25s;}
+    .nav-link:hover{color:var(--text);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);}
+    .nav-dot{width:6px;height:6px;border-radius:50%;}
+
+    .header-tag{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;
+      border:1px solid rgba(158,240,26,.3);background:rgba(158,240,26,.07);
+      font-family:"JetBrains Mono",monospace;font-size:.72rem;letter-spacing:1.5px;color:var(--acc);margin-bottom:16px;}
+    .header-tag::before{content:"▶";font-size:.6rem;animation:blink2 1.5s step-start infinite;}
+    @keyframes blink2{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+    h1{font-size:clamp(2.2rem,5vw,4.6rem);font-weight:800;line-height:.92;margin-bottom:16px;letter-spacing:-1px;}
+    h1 em{font-style:normal;color:var(--acc);text-shadow:0 0 40px var(--acc-glow);}
+    .header-sub{color:var(--muted);font-size:.95rem;max-width:580px;line-height:1.7;margin-bottom:32px;}
+
+    .main-layout{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:start;}
+
+    /* PLAYER */
+    .player-wrap{position:sticky;top:20px;}
+    .player-card{border:1px solid var(--line);border-radius:var(--player-r);background:var(--panel);
+      overflow:hidden;backdrop-filter:blur(16px);box-shadow:0 30px 80px rgba(0,0,0,.6);}
+    .video-area{position:relative;width:100%;aspect-ratio:16/9;background:#000;display:flex;align-items:center;justify-content:center;}
+    .video-area video{width:100%;height:100%;display:block;object-fit:contain;}
+    .video-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:16px;background:rgba(4,5,8,.96);cursor:pointer;transition:opacity .3s;z-index:2;}
+    .video-cover.hidden{opacity:0;pointer-events:none;}
+    .play-icon-big{width:80px;height:80px;border-radius:50%;background:rgba(158,240,26,.1);
+      border:2px solid rgba(158,240,26,.4);display:flex;align-items:center;justify-content:center;
+      box-shadow:0 0 50px rgba(158,240,26,.2);transition:all .25s;}
+    .play-icon-big:hover{background:rgba(158,240,26,.22);box-shadow:0 0 70px rgba(158,240,26,.4);transform:scale(1.05);}
+    .play-icon-big svg{color:var(--acc);margin-left:5px;}
+    .cover-title{font-size:1rem;font-weight:700;color:var(--text);text-align:center;padding:0 28px;}
+    .cover-sub{font-size:.73rem;color:var(--muted);font-family:"JetBrains Mono",monospace;text-align:center;padding:0 20px;}
+
+    .controls-bar{padding:14px 16px;background:rgba(6,7,14,.98);border-top:1px solid var(--line);}
+    .progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+    .progress-time{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--muted);white-space:nowrap;min-width:38px;text-align:center;}
+    .progress-track{flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.1);cursor:pointer;position:relative;transition:height .15s;}
+    .progress-track:hover{height:9px;}
+    .progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--acc),#c8f740);width:0%;pointer-events:none;}
+    .progress-thumb{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;
+      background:#fff;box-shadow:0 0 12px var(--acc-glow);transform:translate(-50%,-50%);left:0%;pointer-events:none;}
+    .progress-track:hover .progress-thumb{transform:translate(-50%,-50%) scale(1.4);}
+
+    .btn-row{display:flex;align-items:center;gap:6px;}
+    .ctrl-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--line-b);
+      background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;font-size:.78rem;font-weight:700;
+      font-family:"JetBrains Mono",monospace;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .ctrl-btn:hover{background:rgba(255,255,255,.1);color:var(--text);}
+    .ctrl-btn.pp{background:var(--acc);border-color:var(--acc);color:#04050a;box-shadow:0 0 18px var(--acc-glow);width:42px;height:42px;border-radius:11px;}
+    .ctrl-btn.pp:hover{background:#b4f040;box-shadow:0 0 30px var(--acc-glow);}
+    .ctrl-sep{width:1px;height:26px;background:var(--line-b);margin:0 4px;}
+    .btn-spacer{flex:1;}
+    .vol-wrap{display:flex;align-items:center;gap:8px;}
+    .vol-track{width:72px;height:4px;border-radius:999px;background:rgba(255,255,255,.1);cursor:pointer;position:relative;}
+    .vol-fill{height:100%;border-radius:999px;background:var(--acc2);width:80%;pointer-events:none;}
+    .vol-label{font-family:"JetBrains Mono",monospace;font-size:.66rem;color:var(--muted);min-width:34px;}
+    .speed-btn{padding:5px 10px;border-radius:7px;border:1px solid var(--line-b);background:transparent;
+      color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:.7rem;cursor:pointer;transition:all .2s;}
+    .speed-btn:hover,.speed-btn.active{border-color:var(--acc);color:var(--acc);background:rgba(158,240,26,.1);}
+
+    .now-playing{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--line);background:rgba(158,240,26,.03);}
+    .np-dot{width:7px;height:7px;flex-shrink:0;border-radius:50%;background:var(--acc);
+      box-shadow:0 0 10px var(--acc-glow);animation:pulse2 2s ease-in-out infinite;}
+    @keyframes pulse2{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.7);}}
+    .np-info{min-width:0;}
+    .np-label{font-family:"JetBrains Mono",monospace;font-size:.65rem;color:var(--muted);margin-bottom:2px;}
+    .np-title{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    /* PLAYLIST */
+    .playlist-card{border:1px solid var(--line);border-radius:var(--player-r);background:var(--panel);overflow:hidden;backdrop-filter:blur(16px);}
+    .playlist-header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+    .playlist-title{font-size:.9rem;font-weight:800;}
+    .playlist-count{font-family:"JetBrains Mono",monospace;font-size:.7rem;color:var(--muted);}
+    .playlist-list{max-height:460px;overflow-y:auto;}
+    .playlist-list::-webkit-scrollbar{width:3px;}
+    .playlist-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
+    .pli{display:flex;align-items:center;gap:11px;padding:11px 16px;cursor:pointer;
+      border-bottom:1px solid var(--line);transition:background .2s;position:relative;}
+    .pli:last-child{border-bottom:none;}
+    .pli:hover{background:rgba(255,255,255,.04);}
+    .pli.active{background:rgba(158,240,26,.06);}
+    .pli.active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+      background:linear-gradient(180deg,var(--acc),#c8f740);border-radius:0 2px 2px 0;}
+    .pli-num{font-family:"JetBrains Mono",monospace;font-size:.68rem;color:var(--muted);width:20px;text-align:center;flex-shrink:0;}
+    .pli.active .pli-num{color:var(--acc);}
+    .pli-thumb{width:76px;height:44px;border-radius:7px;overflow:hidden;flex-shrink:0;
+      background:rgba(255,255,255,.06);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+    .pli-thumb-icon{font-size:1.2rem;color:rgba(255,255,255,.5);}
+    .pli.active .pli-thumb-icon{color:var(--acc);}
+    .pli-info{flex:1;min-width:0;}
+    .pli-name{font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+    .pli.active .pli-name{color:var(--acc);}
+    .pli-meta{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pli-dur{font-family:"JetBrains Mono",monospace;font-size:.68rem;color:var(--muted);flex-shrink:0;}
+    .pli-del{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:transparent;
+      color:var(--muted);cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;transition:all .2s;opacity:0;}
+    .pli:hover .pli-del{opacity:1;}
+    .pli-del:hover{background:rgba(255,80,80,.15);border-color:rgba(255,80,80,.35);color:#ff6b6b;}
+
+    /* DROP CARD */
+    .drop-card{margin-top:18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);backdrop-filter:blur(16px);overflow:hidden;}
+    .drop-header{padding:13px 18px;border-bottom:1px solid var(--line);font-size:.85rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+    .drop-zone{margin:16px 18px;border:2px dashed var(--line-b);border-radius:12px;
+      padding:26px 18px;text-align:center;cursor:pointer;transition:all .25s;position:relative;}
+    .drop-zone:hover,.drop-zone.drag-over{border-color:var(--acc);background:rgba(158,240,26,.05);}
+    .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .drop-icon{font-size:2rem;margin-bottom:8px;display:block;}
+    .drop-text{font-size:.85rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+    .drop-hint{font-family:"JetBrains Mono",monospace;font-size:.68rem;color:var(--muted);line-height:1.6;}
+    .drop-hint strong{color:var(--acc2);}
+
+    .add-body{padding:4px 18px 18px;}
+    .add-label{display:block;font-family:"JetBrains Mono",monospace;font-size:.65rem;
+      letter-spacing:1px;color:var(--muted);margin:10px 0 5px;text-transform:uppercase;}
+    .add-input{width:100%;padding:9px 13px;border-radius:9px;border:1px solid var(--line-b);
+      background:rgba(255,255,255,.04);color:var(--text);font-family:"JetBrains Mono",monospace;
+      font-size:.78rem;outline:none;transition:border-color .2s;}
+    .add-input:focus{border-color:rgba(158,240,26,.4);}
+    .add-input::placeholder{color:var(--muted);}
+    .add-btn{width:100%;padding:11px;border-radius:10px;border:none;margin-top:12px;
+      background:linear-gradient(135deg,var(--acc),#c8f740);color:#04050a;
+      font-family:"Syne",sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;
+      transition:all .25s;box-shadow:0 6px 20px rgba(158,240,26,.25);}
+    .add-btn:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(158,240,26,.4);}
+
+    .folder-note{display:flex;align-items:flex-start;gap:8px;margin:12px 0;padding:10px 12px;
+      border-radius:10px;border:1px solid rgba(90,215,255,.2);background:rgba(90,215,255,.05);}
+    .folder-note p{font-family:"JetBrains Mono",monospace;font-size:.67rem;color:var(--muted);line-height:1.6;}
+    .folder-note strong{color:var(--acc2);}
+
+    /* SHORTCUTS */
+    .shortcuts{margin-top:18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);overflow:hidden;}
+    .shortcuts-header{padding:12px 18px;border-bottom:1px solid var(--line);font-size:.82rem;font-weight:800;}
+    .shortcuts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);}
+    .sc-item{padding:8px 14px;background:var(--panel);display:flex;align-items:center;gap:8px;}
+    .sc-key{font-family:"JetBrains Mono",monospace;font-size:.68rem;padding:2px 7px;border-radius:5px;
+      border:1px solid var(--line-b);background:rgba(255,255,255,.05);color:var(--acc);white-space:nowrap;}
+    .sc-desc{font-size:.72rem;color:var(--muted);}
+
+    .sec-row{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+    .sec-row h2{font-size:1rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+    .sec-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(158,240,26,.6),rgba(90,215,255,.4),transparent);}
+
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+      padding:10px 22px;border-radius:999px;border:1px solid var(--line-b);
+      background:rgba(10,12,20,.95);font-family:"JetBrains Mono",monospace;font-size:.78rem;
+      color:var(--text);backdrop-filter:blur(16px);opacity:0;pointer-events:none;transition:all .3s;z-index:9999;white-space:nowrap;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+    footer{margin-top:52px;padding:20px 0 8px;border-top:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+    .f-brand{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--acc);}
+    .f-copy{font-size:.75rem;color:var(--muted);}
+
+    @media(max-width:900px){.main-layout{grid-template-columns:1fr;}.player-wrap{position:static;}}
+    @media(max-width:500px){.speed-btn,.vol-label,.shortcuts{display:none;}}
+  </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="page">
+  <nav>
+    <span class="nav-brand">▶ video.gallery</span>
+    <div class="nav-links">
+      <a href="index.html#portfolio" class="nav-link">Portafolio</a>
+      <a href="cv.html" class="nav-link"><span class="nav-dot" style="background:var(--acc2);"></span>CV</a>
+      <a href="index.html" class="nav-link"><span class="nav-dot" style="background:#b06eff;"></span>← Inicio</a>
+    </div>
+  </nav>
+
+  <div class="header-tag">Galería de Video</div>
+  <h1>Mi <em>Galería</em><br>de Videos</h1>
+  <p class="header-sub">
+    Reproductor local. Tus videos van en la carpeta
+    <code style="color:var(--acc);font-family:'JetBrains Mono',monospace;font-size:.9em;padding:1px 6px;border-radius:5px;border:1px solid rgba(158,240,26,.3);background:rgba(158,240,26,.07);">videos/</code>
+    junto a este HTML.
+  </p>
+
+  <div class="sec-row"><h2>Reproductor</h2><div class="sec-line"></div></div>
+
+  <div class="main-layout">
+    <div class="player-wrap">
+      <div class="player-card">
+        <div class="video-area" id="video-area">
+          <video id="main-video" preload="metadata"></video>
+          <div class="video-cover" id="video-cover" onclick="handleCoverClick()">
+            <div class="play-icon-big">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <p class="cover-title" id="cover-title">Selecciona un video de la lista</p>
+            <p class="cover-sub" id="cover-sub">o arrastra un archivo aquí</p>
+          </div>
+        </div>
+
+        <div class="controls-bar">
+          <div class="progress-wrap">
+            <span class="progress-time" id="time-curr">0:00</span>
+            <div class="progress-track" id="progress-track">
+              <div class="progress-fill" id="progress-fill"></div>
+              <div class="progress-thumb" id="progress-thumb"></div>
+            </div>
+            <span class="progress-time" id="time-total">0:00</span>
+          </div>
+          <div class="btn-row">
+            <button class="ctrl-btn" onclick="skip(-10)" title="−10s">«10</button>
+            <button class="ctrl-btn" onclick="prevVideo()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+            </button>
+            <button class="ctrl-btn pp" id="pp-btn" onclick="togglePlay()">
+              <svg id="pp-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="ctrl-btn" onclick="nextVideo()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2-8.14 5.12 2.14L8 14.14V9.86zM16 6h2v12h-2z"/></svg>
+            </button>
+            <button class="ctrl-btn" onclick="skip(10)" title="+10s">10»</button>
+            <div class="ctrl-sep"></div>
+            <div class="vol-wrap">
+              <button class="ctrl-btn" id="mute-btn" onclick="toggleMute()" style="font-size:.9rem;">🔊</button>
+              <div class="vol-track" id="vol-track"><div class="vol-fill" id="vol-fill"></div></div>
+              <span class="vol-label" id="vol-label">80%</span>
+            </div>
+            <div class="ctrl-sep"></div>
+            <button class="speed-btn active" data-speed="1"   onclick="setSpeed(this)">1×</button>
+            <button class="speed-btn"        data-speed="1.5" onclick="setSpeed(this)">1.5×</button>
+            <button class="speed-btn"        data-speed="2"   onclick="setSpeed(this)">2×</button>
+            <div class="btn-spacer"></div>
+            <button class="ctrl-btn" onclick="toggleFS()" style="font-size:1rem;">⛶</button>
+          </div>
+        </div>
+
+        <div class="now-playing">
+          <span class="np-dot"></span>
+          <div class="np-info">
+            <p class="np-label">Reproduciendo</p>
+            <p class="np-title" id="np-title">— Ningún video seleccionado —</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- PLAYLIST -->
+      <div class="playlist-card">
+        <div class="playlist-header">
+          <span class="playlist-title">Playlist</span>
+          <span class="playlist-count" id="pl-count">0 videos</span>
+        </div>
+        <div class="playlist-list" id="playlist-list">
+          <div style="padding:28px 18px;text-align:center;color:var(--muted);font-size:.8rem;font-family:'JetBrains Mono',monospace;line-height:1.8;">
+            Agrega videos usando<br>el panel de abajo ↓
+          </div>
+        </div>
+      </div>
+
+      <!-- ADD / DROP -->
+      <div class="drop-card">
+        <div class="drop-header">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Agregar Videos
+        </div>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept="video/*" multiple onchange="handleFileInput(event)">
+          <span class="drop-icon">🎬</span>
+          <p class="drop-text">Arrastra tus videos aquí</p>
+          <p class="drop-hint">o haz <strong>clic para explorar</strong><br>.mp4 · .webm · .mov · .mkv · .avi</p>
+        </div>
+        <div class="add-body">
+          <div class="folder-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--acc2);margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p>Pon tus archivos en <strong>videos/</strong> y escribe el nombre exacto abajo.</p>
+          </div>
+
+          <label class="add-label" for="vid-file">Nombre del archivo</label>
+          <input class="add-input" id="vid-file" placeholder="mi-video.mp4" type="text">
+          <label class="add-label" for="vid-title">Título visible</label>
+          <input class="add-input" id="vid-title" placeholder="Ej: Proyecto Final 2024" type="text">
+          <label class="add-label" for="vid-desc">Descripción (opcional)</label>
+          <input class="add-input" id="vid-desc" placeholder="Breve descripción..." type="text">
+          <button class="add-btn" onclick="addFromFolder()">+ Agregar a playlist</button>
+        </div>
+      </div>
+
+      <!-- SHORTCUTS -->
+      <div class="shortcuts">
+        <div class="shortcuts-header">⌨ Atajos de teclado</div>
+        <div class="shortcuts-grid">
+          <div class="sc-item"><span class="sc-key">Espacio</span><span class="sc-desc">Play / Pausa</span></div>
+          <div class="sc-item"><span class="sc-key">F</span><span class="sc-desc">Pantalla completa</span></div>
+          <div class="sc-item"><span class="sc-key">← →</span><span class="sc-desc">±10 segundos</span></div>
+          <div class="sc-item"><span class="sc-key">↑ ↓</span><span class="sc-desc">Volumen</span></div>
+          <div class="sc-item"><span class="sc-key">N</span><span class="sc-desc">Siguiente video</span></div>
+          <div class="sc-item"><span class="sc-key">P</span><span class="sc-desc">Video anterior</span></div>
+          <div class="sc-item"><span class="sc-key">M</span><span class="sc-desc">Silenciar</span></div>
+          <div class="sc-item"><span class="sc-key">ESC</span><span class="sc-desc">Salir fullscreen</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="f-brand">▶ video.gallery</span>
+    <span class="f-copy">Reproductor Local · Portfolio Visual</span>
+  </footer>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════════
+  //  PRE-CARGA DE VIDEOS DESDE LA CARPETA
+  //  Coloca tus archivos en videos/
+  //  y ajusta los nombres y títulos aquí.
+  // ═══════════════════════════════════════════════════
+  let playlist = [
+    { src: 'videos/proyecto1.mp4',   title: 'Proyecto 1',   desc: 'Mi primer proyecto audiovisual' },
+    { src: 'videos/animacion.mp4',   title: 'Animación 3D', desc: 'Creación en Blender' },
+    { src: 'videos/cortometraje.mp4',title: 'Cortometraje', desc: 'Narrativa experimental' },
+    { src: 'videos/reel2025.mp4',    title: 'Reel 2025',    desc: 'Compilación de trabajos' },
+  ];
+
+  // ====================================================
+  // FUNCIONES DEL REPRODUCTOR (NO MODIFICAR)
+  // ====================================================
+  let currentIdx = -1;
+  let vol = 0.8;
+  const video = document.getElementById('main-video');
+  video.volume = vol;
+
+  function renderPlaylist() {
+    const list = document.getElementById('playlist-list');
+    if (playlist.length === 0) {
+      list.innerHTML = `<div style="padding:28px 18px;text-align:center;color:var(--muted);
+        font-size:.8rem;font-family:'JetBrains Mono',monospace;line-height:1.8;">
+        Agrega videos usando<br>el panel de abajo ↓</div>`;
+      document.getElementById('pl-count').textContent = '0 videos';
+      return;
+    }
+    list.innerHTML = '';
+    playlist.forEach((item, i) => {
+      const isActive = i === currentIdx;
+      const div = document.createElement('div');
+      div.className = 'pli' + (isActive ? ' active' : '');
+      div.innerHTML = `
+        <span class="pli-num">${i + 1}</span>
+        <div class="pli-thumb"><span class="pli-thumb-icon">${isActive ? '▶' : '⏸'}</span></div>
+        <div class="pli-info">
+          <p class="pli-name">${item.title}</p>
+          <p class="pli-meta">${item.desc || item.src.split('/').pop()}</p>
+        </div>
+        <span class="pli-dur" id="dur-${i}">—</span>
+        <button class="pli-del" onclick="removeVideo(event,${i})">✕</button>
+      `;
+      div.addEventListener('click', () => loadVideo(i));
+      list.appendChild(div);
+    });
+    document.getElementById('pl-count').textContent = `${playlist.length} video${playlist.length !== 1 ? 's' : ''}`;
+  }
+
+  function loadVideo(idx) {
+    currentIdx = idx;
+    const item = playlist[idx];
+    video.src = item.src;
+    video.load();
+    document.getElementById('cover-title').textContent = item.title;
+    document.getElementById('cover-sub').textContent   = item.desc || item.src.split('/').pop();
+    document.getElementById('np-title').textContent    = item.title;
+    document.getElementById('time-curr').textContent   = '0:00';
+    document.getElementById('time-total').textContent  = '0:00';
+    setProgress(0);
+    video.play()
+      .then(() => { hideCover(); setPPIcon(false); })
+      .catch(() => { showCover(); setPPIcon(true); });
+    renderPlaylist();
+  }
+
+  function hideCover() { document.getElementById('video-cover').classList.add('hidden'); }
+  function showCover() { document.getElementById('video-cover').classList.remove('hidden'); }
+
+  function handleCoverClick() {
+    if (currentIdx < 0 && playlist.length > 0) { loadVideo(0); return; }
+    if (currentIdx >= 0) {
+      video.play().then(() => { hideCover(); setPPIcon(false); }).catch(() => {});
+    }
+  }
+
+  function togglePlay() {
+    if (!video.src || video.src === window.location.href) { toast('Selecciona un video primero'); return; }
+    if (video.paused) { video.play().then(() => { hideCover(); setPPIcon(false); }); }
+    else { video.pause(); setPPIcon(true); }
+  }
+
+  function setPPIcon(paused) {
+    document.getElementById('pp-icon').innerHTML = paused
+      ? '<path d="M8 5v14l11-7z"/>'
+      : '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  }
+
+  function skip(sec) { if (video.duration) video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + sec)); }
+  function prevVideo() { if (playlist.length) loadVideo(currentIdx <= 0 ? playlist.length - 1 : currentIdx - 1); }
+  function nextVideo() { if (playlist.length) loadVideo(currentIdx >= playlist.length - 1 ? 0 : currentIdx + 1); }
+
+  function setProgress(pct) {
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-thumb').style.left = pct + '%';
+  }
+
+  const track = document.getElementById('progress-track');
+  let dragging = false;
+  function seekFrom(e) {
+    if (!video.duration) return;
+    const r = track.getBoundingClientRect();
+    video.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * video.duration;
+  }
+  track.addEventListener('mousedown', e => { dragging = true; seekFrom(e); });
+  document.addEventListener('mousemove', e => { if (dragging) seekFrom(e); });
+  document.addEventListener('mouseup', () => { dragging = false; });
+  track.addEventListener('touchstart', e => seekFrom(e.touches[0]), { passive: true });
+  track.addEventListener('touchmove',  e => seekFrom(e.touches[0]), { passive: true });
+
+  document.getElementById('vol-track').addEventListener('click', e => {
+    const r = document.getElementById('vol-track').getBoundingClientRect();
+    vol = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    applyVolume();
+  });
+  function applyVolume() {
+    video.volume = vol; video.muted = false;
+    document.getElementById('vol-fill').style.width  = (vol * 100) + '%';
+    document.getElementById('vol-label').textContent = Math.round(vol * 100) + '%';
+    document.getElementById('mute-btn').textContent  = vol === 0 ? '🔇' : vol < 0.5 ? '🔉' : '🔊';
+  }
+  function toggleMute() {
+    video.muted = !video.muted;
+    document.getElementById('mute-btn').textContent = video.muted ? '🔇' : (vol < 0.5 ? '🔉' : '🔊');
+  }
+  function setSpeed(btn) {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active'); video.playbackRate = parseFloat(btn.dataset.speed);
+  }
+  function toggleFS() {
+    const el = document.getElementById('video-area');
+    if (!document.fullscreenElement) el.requestFullscreen().catch(() => {});
+    else document.exitFullscreen();
+  }
+
+  function fmtTime(s) {
+    if (!s || isNaN(s)) return '0:00';
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  }
+
+  video.ontimeupdate = () => {
+    if (!video.duration) return;
+    setProgress((video.currentTime / video.duration) * 100);
+    document.getElementById('time-curr').textContent = fmtTime(video.currentTime);
+  };
+  video.ondurationchange = () => {
+    document.getElementById('time-total').textContent = fmtTime(video.duration);
+    const el = document.getElementById(`dur-${currentIdx}`);
+    if (el) el.textContent = fmtTime(video.duration);
+  };
+  video.onplay  = () => { setPPIcon(false); hideCover(); };
+  video.onpause = () => setPPIcon(true);
+  video.onended = () => {
+    if (currentIdx < playlist.length - 1) loadVideo(currentIdx + 1);
+    else { setPPIcon(true); showCover(); }
+  };
+  video.onerror = () => {
+    if (!video.src || video.src === window.location.href) return;
+    showCover();
+    document.getElementById('cover-title').textContent = '⚠ No se pudo cargar el video';
+    document.getElementById('cover-sub').textContent   = 'Verifica que el archivo esté en videos/';
+    toast('⚠ Verifica que el archivo exista en videos/');
+  };
+
+  // Drag & Drop sobre reproductor
+  const videoArea = document.getElementById('video-area');
+  videoArea.addEventListener('dragover', e => { e.preventDefault(); videoArea.style.outline = '2px dashed var(--acc)'; videoArea.style.outlineOffset = '-4px'; });
+  videoArea.addEventListener('dragleave', () => { videoArea.style.outline = ''; });
+  videoArea.addEventListener('drop', e => {
+    e.preventDefault(); videoArea.style.outline = '';
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('video/'));
+    if (!files.length) { toast('El archivo no es un video válido'); return; }
+    const start = playlist.length;
+    files.forEach(addBlobVideo);
+    loadVideo(start);
+  });
+
+  const dropZone = document.getElementById('drop-zone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('video/'));
+    const start = playlist.length;
+    files.forEach(addBlobVideo);
+    if (files.length && currentIdx < 0) loadVideo(start);
+  });
+
+  function handleFileInput(e) {
+    const files = Array.from(e.target.files);
+    const start = playlist.length;
+    files.forEach(addBlobVideo);
+    if (files.length) loadVideo(start);
+    e.target.value = '';
+  }
+
+  function addBlobVideo(file) {
+    const url   = URL.createObjectURL(file);
+    const title = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+    playlist.push({ src: url, title, desc: file.name, type: 'blob' });
+    renderPlaylist();
+    toast(`✓ "${title}" agregado`);
+  }
+
+  function addFromFolder() {
+    const fileName = document.getElementById('vid-file').value.trim();
+    const rawTitle = document.getElementById('vid-title').value.trim();
+    const desc     = document.getElementById('vid-desc').value.trim();
+    if (!fileName) { toast('Escribe el nombre del archivo'); return; }
+    const title = rawTitle || fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+    playlist.push({ src: `videos/${fileName}`, title, desc, type: 'folder' });
+    renderPlaylist();
+    document.getElementById('vid-file').value  = '';
+    document.getElementById('vid-title').value = '';
+    document.getElementById('vid-desc').value  = '';
+    toast(`✓ "${title}" agregado`);
+    if (currentIdx < 0) loadVideo(0);
+  }
+
+  function removeVideo(e, idx) {
+    e.stopPropagation();
+    const wasActive = idx === currentIdx;
+    if (playlist[idx].type === 'blob') URL.revokeObjectURL(playlist[idx].src);
+    playlist.splice(idx, 1);
+    if (wasActive) {
+      video.pause(); video.src = ''; currentIdx = -1;
+      document.getElementById('np-title').textContent = '— Ningún video seleccionado —';
+      setProgress(0);
+      document.getElementById('time-curr').textContent  = '0:00';
+      document.getElementById('time-total').textContent = '0:00';
+      document.getElementById('cover-title').textContent = 'Selecciona un video de la lista';
+      document.getElementById('cover-sub').textContent   = 'o arrastra un archivo aquí';
+      showCover();
+    } else if (idx < currentIdx) { currentIdx--; }
+    renderPlaylist();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === ' ')          { e.preventDefault(); togglePlay(); }
+    if (e.key === 'ArrowRight') skip(10);
+    if (e.key === 'ArrowLeft')  skip(-10);
+    if (e.key === 'ArrowUp')    { vol = Math.min(1, vol + .1); applyVolume(); }
+    if (e.key === 'ArrowDown')  { vol = Math.max(0, vol - .1); applyVolume(); }
+    if (e.key === 'f' || e.key === 'F') toggleFS();
+    if (e.key === 'm' || e.key === 'M') toggleMute();
+    if (e.key === 'n' || e.key === 'N') nextVideo();
+    if (e.key === 'p' || e.key === 'P') prevVideo();
+  });
+
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  renderPlaylist();
+</script>
+</body>
+</html>
